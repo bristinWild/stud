@@ -9,9 +9,9 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 const _playfair = Playfair_Display({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Homie - Location de maisons entre particuliers",
-  description: "Trouvez votre maison idéale ou mettez la vôtre en location. Simple, sécurisé, entre particuliers.",
-    generator: 'v0.app'
+  title: "Stud - The onchain dating app",
+  description: "Connect with real people, build reputation together, and create something that lives beyond the match.",
+
 }
 
 export default function RootLayout({
