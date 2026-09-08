@@ -1,216 +1,637 @@
 # Stud
 
-> **A World ID–verified social + DeFi protocol where two people can match, create a shared onchain identity, build reputation through consent-based milestones, and progressively unlock deeper market participation.**
+> **Stud is a World ID–verified social + market protocol where verified humans can match, form a new shared onchain Pair identity, build Pair reputation through consent-based milestones, and unlock progressively larger markets.**
 
 ---
 
-## 1. Overview
+## 1. Product Thesis
 
-**Stud** is a social application with an onchain market layer.
+Stud combines three layers:
 
-At the social layer, users discover and match with real people, similar to a dating app. Each user is verified through **World ID** so the protocol can reason about unique humans rather than bots or duplicate accounts.
+1. **Verified social identity** - users prove unique humanity with World ID.
+2. **Social matching** - verified users discover each other and mutually match.
+3. **Market infrastructure** - objective social outcomes can be traded before a match, while a successful match creates a persistent Pair Token market.
 
-At the market layer, users can be backed by participants who believe they will form successful verified social connections.
-
-The core primitive appears **after two verified users mutually match**:
-
-> **Two individual identities create a third shared onchain identity: the Pair.**
-
-When Alice and Bob match, Stud creates a **Pair Token / Pair Identity** representing that connection.
-
-The Pair begins with very limited economic permissions. Over time, Alice and Bob may voluntarily accept community- or investor-proposed milestones. When both complete and attest to a milestone, the Pair earns reputation.
-
-That reputation does **not automatically increase token price**.
-
-Instead, reputation expands what the Pair is allowed to do economically:
-
-- larger token-market limits,
-- access to sponsored challenges and rewards,
-- deeper liquidity,
-- higher market capacity,
-- and eventually graduation into an open liquidity pool.
-
-The market decides price.  
-The protocol decides what reputation unlocks.
-
----
-
-# 2. The Core Idea in One Flow
+The defining primitive is the **Pair**:
 
 ```text
-World ID Verification
-        ↓
-Verified Social Profile
-        ↓
-Swipe / Discover
-        ↓
+Verified Human A
++
+Verified Human B
++
 Mutual Match
-        ↓
-Pair Identity + Pair Token Created
-        ↓
-Community / Investors Propose Milestones
-        ↓
-Alice + Bob Choose What They Accept
-        ↓
-They Complete a Joint Activity
-        ↓
-Both Submit an Attestation
-        ↓
-Pair Reputation Increases
-        ↓
-New Economic Permissions Unlock
-        ↓
-More Market Capacity / Rewards / Liquidity
-        ↓
-If Reputation + Market Demand Reach Threshold
-        ↓
-Pair Token Graduates to an Open Liquidity Pool
+=
+New Pair Identity
 ```
 
----
+The Pair is a third onchain identity with its own:
 
-# 3. Why Stud Exists
+- Pair ID
+- Pair Token
+- reputation
+- milestone history
+- market stage
+- market capacity
+- liquidity lifecycle
 
-Most dating and social applications have two major properties:
+The core rule is:
 
-1. social interactions are kept inside a closed application database;
-2. those interactions have almost no composable economic identity.
+> **Social activity changes reputation. Market demand changes price.**
 
-At the same time, crypto markets can create economic systems around almost anything, but they often struggle with one major problem:
-
-**How do we know the participants are real humans?**
-
-Stud connects these two worlds.
-
-It asks:
-
-> What happens when a verified social connection itself becomes an evolving onchain primitive?
-
-Instead of only representing Alice and Bob individually, Stud lets their connection become something that has:
-
-- identity,
-- history,
-- reputation,
-- permissions,
-- community participation,
-- and eventually its own market.
+Reputation never directly pumps or sets the Pair Token price.
 
 ---
 
-# 4. Main Participants
+## 2. Participants
 
-## 4.1 Studs
+### 2.1 Stud
 
-A **Stud** is a verified human using the social side of the platform.
+A **Stud** is a World ID–verified human using the social side of the app.
 
 A Stud can:
 
-- verify with World ID,
-- create a social profile,
-- discover other verified users,
-- swipe / express interest,
-- receive matches,
-- create Pair Identities,
-- accept or reject proposed milestones,
-- complete joint milestones,
-- build individual and Pair reputation.
+- verify with World ID
+- create a profile
+- discover other verified users
+- like / swipe
+- form mutual matches
+- create Pair identities
+- accept or reject milestone proposals
+- attest completed milestones
+- accumulate individual protocol history
 
----
+### 2.2 Pair
 
-## 4.2 Investors / Backers
+A **Pair** is created after two verified Studs mutually match.
 
-Investors participate in the market layer.
-
-They may:
-
-- back individual Studs,
-- participate in early Pair Token markets,
-- observe reputation and milestone history,
-- propose optional Pair challenges,
-- participate as Pair markets expand,
-- trade Pair Tokens according to their own view of the Pair's future demand.
-
-Importantly:
-
-> Investors do not control Alice or Bob.
-
-They can propose a milestone, but the Pair must explicitly accept it.
-
----
-
-## 4.3 The Pair
-
-When two verified users mutually match, Stud creates a new entity:
+Example:
 
 ```text
-Alice + Bob → AliceBob Pair
-```
-
-The Pair is not simply Alice's reputation plus Bob's reputation.
-
-It is a **new shared identity** that develops its own history.
-
-For example:
-
-```text
-Alice
-World ID verified
-Individual reputation: 72
-
-Bob
-World ID verified
-Individual reputation: 81
-
-             ↓ Match
-
+Alice + Bob
+    ↓
 AliceBob Pair
+
 Pair ID: 0xPAIR...
-Stage: New
+Pair Token: $ALICEBOB
 Pair Reputation: 0
 Completed Milestones: 0
-Market Capacity: Small
-Liquidity Stage: Bonding Curve
+Stage: New
+Market Capacity: $500
+Market Venue: Stud Bonding Curve
 ```
 
-The Pair then grows independently.
+The Pair starts from zero reputation and develops independently from Alice and Bob.
+
+### 2.3 Investor / Backer
+
+Investors can participate in two distinct market types:
+
+1. **Individual outcome markets** before or around matching.
+2. **Pair Token markets** after a Pair is created.
+
+These are deliberately separate products.
 
 ---
 
-# 5. World ID
+# 3. The Two Investment Paths
 
-World ID is one of the most important parts of Stud.
+## 3.1 Investing Around an Individual Stud
 
-It gives Stud a way to build markets around **real, unique humans** rather than arbitrary wallets.
+The original Stud concept says investors may “back individual Studs,” but it does **not** define a persistent individual Stud token or an ownership claim over a person.
 
-Possible uses include:
+For the MVP, the cleanest implementation is:
 
-### Human Verification
+> **Individual backing = prediction markets on objective protocol events.**
 
-A user must prove they are a unique human before becoming a Stud.
+Examples:
+
+```text
+Will Alice receive at least 1 verified mutual match by Friday?
+
+Will Bob reach 5 verified mutual matches this month?
+
+Will Alice and Bob form a Pair before September 30?
+```
+
+These markets should settle only on objective protocol state.
+
+Avoid markets such as:
+
+```text
+Will Alice fall in love?
+Is Bob a good partner?
+Will their date be romantic?
+```
+
+Stud should never attempt to resolve subjective emotions.
+
+### Individual Market MVP Mechanics
+
+Recommended MVP format:
+
+```text
+Market:
+Will Alice receive ≥1 verified mutual match by Sep 30?
+
+Outcomes:
+YES / NO
+
+Collateral:
+USDC
+
+Share value at resolution:
+1 winning share = 1 USDC
+1 losing share = 0 USDC
+```
+
+A YES or NO share trades between `0` and `1 USDC`.
+
+#### Example Investor Gain
+
+An investor buys:
+
+```text
+100 YES shares
+Average entry price: $0.35
+Cost: 100 × $0.35 = $35
+```
+
+If the market resolves YES:
+
+```text
+Payout: 100 × $1 = $100
+Gross profit: $100 - $35 = $65
+```
+
+If it resolves NO:
+
+```text
+Payout: $0
+Loss: $35
+```
+
+This is the most precise current interpretation of “backing an individual Stud.”
+
+### Important
+
+For the ETHGlobal MVP:
+
+- no individual Stud token is required
+- no investor owns part of a person
+- no revenue share from a Stud is implied
+- the investor is taking a position on an objective protocol event
+
+---
+
+# 4. Investing in a Pair
+
+Once two Studs mutually match, Stud creates a Pair Token.
+
+Example:
+
+```text
+Alice + Bob
+→ Pair created
+→ $ALICEBOB launched
+```
+
+Investors can buy and sell `$ALICEBOB` through the Stud bonding-curve market.
+
+Unlike an individual prediction market, a Pair Token does **not** resolve on one date.
+
+It is a persistent market around the Pair identity.
+
+---
+
+## 4.1 Why an Investor Buys a Pair Token
+
+An investor may believe:
+
+```text
+Pair stays active
+    ↓
+Pair completes more milestones
+    ↓
+Pair reputation increases
+    ↓
+More market permissions unlock
+    ↓
+More market participants may become interested
+    ↓
+Demand for the Pair Token may increase
+    ↓
+Token price may rise
+```
+
+This is speculative.
+
+There is no guaranteed return.
+
+---
+
+## 4.2 How a Pair Token Investor Makes or Loses Money
+
+A Pair Token investor makes money only if they can later sell their tokens for more than their effective purchase cost.
+
+Example:
+
+```text
+Investor buys:
+200 $ALICEBOB
+
+Average buy price:
+$0.40
+
+Total cost:
+200 × $0.40 = $80
+```
+
+Later, stronger demand moves the market.
+
+If the investor can sell at an average execution price of `$0.65`:
+
+```text
+Sale proceeds:
+200 × $0.65 = $130
+
+Gross gain:
+$130 - $80 = $50
+```
+
+If demand falls and the average sell price becomes `$0.25`:
+
+```text
+Sale proceeds:
+200 × $0.25 = $50
+
+Gross loss:
+$80 - $50 = $30
+```
+
+Actual execution should account for:
+
+- bonding-curve slippage
+- protocol fees, if any
+- available liquidity
+
+### Critical Rule
+
+A milestone does **not** directly pay Pair Token holders.
+
+A milestone does:
+
+```text
+Milestone completed
+→ Pair reputation increases
+→ higher protocol permissions may unlock
+```
+
+Then investors independently decide whether that makes the Pair more or less attractive.
+
+---
+
+# 5. Pair Reputation - MVP
+
+For the hackathon version, reputation should be transparent.
+
+### Final MVP Rule
+
+```text
+Pair created:
+Reputation = 0
+
+Milestone accepted:
++0
+
+Milestone successfully completed
+AND mutually attested:
++10
+```
+
+No hidden scoring model is needed for the MVP.
+
+Examples:
+
+```text
+0 completed milestones  → Reputation 0
+1 completed milestone   → Reputation 10
+2 completed milestones  → Reputation 20
+5 completed milestones  → Reputation 50
+7 completed milestones  → Reputation 70
+```
+
+Future versions can add richer signals such as:
+
+- pair age
+- completion rate
+- mutual attestation rate
+- activity consistency
+- challenge diversity
+- community sponsorship
+- cooldowns / anti-farming signals
+
+---
+
+# 6. Consent-Based Milestones
+
+A milestone is a voluntary joint action proposed to a Pair.
+
+Examples:
+
+```text
+Complete a first video call before Sunday
+
+Complete three mutual check-ins this week
+
+Attend a shared event
+
+Complete a sponsored coffee challenge
+```
+
+A milestone becomes active only when:
+
+```text
+Alice accepts
+AND
+Bob accepts
+```
+
+An investor or community member:
+
+```text
+can propose
+cannot force
+```
+
+If either Pair member rejects:
+
+```text
+Proposal rejected
+→ no reputation change
+→ no penalty
+```
+
+---
+
+# 7. Milestone Completion
+
+After an accepted milestone is completed:
+
+```text
+Alice attests
+Bob attests
+```
+
+The protocol checks:
+
+```text
+Alice attested?       ✓
+Bob attested?         ✓
+Deadline valid?       ✓
+Pair still active?    ✓
+Milestone accepted?   ✓
+```
+
+Then:
+
+```text
+Milestone status:
+Completed
+
+Pair Reputation:
++10
+```
+
+For the hackathon MVP, mutual attestation is sufficient.
+
+Stud does not need invasive surveillance of real-world activity.
+
+---
+
+# 8. Market Capacity
+
+Market capacity limits how much capital can enter a new Pair market before the Pair has built sufficient reputation.
+
+For the MVP, define **market capacity** as:
+
+> **The maximum USDC reserve / economic exposure permitted inside the controlled Pair bonding-curve market at the Pair's current reputation stage.**
+
+This prevents a brand-new Pair from immediately attracting unlimited capital.
+
+---
+
+# 9. Final MVP Pair Stages
+
+To remove ambiguity from earlier drafts, use these thresholds consistently:
+
+| Pair Stage | Reputation | Maximum Controlled Market Capacity | Market Status |
+|---|---:|---:|---|
+| New | 0–19 | $500 | Stud bonding curve |
+| Growing | 20–49 | $2,000 | Stud bonding curve |
+| Established | 50–69 | $10,000 | Stud bonding curve |
+| Graduation Eligible | 70+ and reserve ≥ $10,000 | Graduation enabled | Ready for open liquidity |
+| Graduated | After liquidity migration | Open | DEX / open liquidity |
+
+This gives the protocol a simple rule:
+
+```text
+Proof first
+Capital later
+```
+
+Example:
+
+```text
+Pair Reputation = 10
+→ Market Capacity = $500
+
+Pair Reputation = 20
+→ Market Capacity = $2,000
+
+Pair Reputation = 50
+→ Market Capacity = $10,000
+
+Pair Reputation ≥ 70
+AND
+Bonding Curve Reserve ≥ $10,000
+→ Graduation Eligible
+```
+
+---
+
+# 10. Bonding-Curve Market
+
+Before graduation, Pair Tokens trade inside Stud through a bonding curve.
+
+Conceptually:
+
+```text
+More net buying
+→ token price rises along the curve
+
+More net selling
+→ token price falls along the curve
+```
+
+The bonding curve provides:
+
+- controlled early liquidity
+- deterministic price quotes
+- market-capacity enforcement
+- transparent buy / sell execution
+- a reserve that can be used in graduation logic
+
+The exact curve formula can be implementation-specific for the hackathon.
+
+The UI and contract should expose at minimum:
+
+```text
+current token price
+current token supply
+current reserve
+current stage capacity
+remaining capacity
+estimated buy / sell execution price
+```
+
+---
+
+# 11. Reputation Does Not Set Price
+
+This distinction is central to Stud.
+
+Wrong:
+
+```text
+Pair completes milestone
+→ contract increases price by 20%
+```
+
+Stud:
+
+```text
+Pair completes milestone
+        ↓
+Reputation +10
+        ↓
+New economic permissions may unlock
+        ↓
+Investors observe the new state
+        ↓
+Investors buy or sell
+        ↓
+Demand changes
+        ↓
+Bonding curve price changes
+```
+
+> **The protocol changes reputation. The market changes price.**
+
+---
+
+# 12. Graduation
+
+A Pair can graduate from the controlled Stud bonding curve into open liquidity.
+
+### Final MVP Graduation Rule
+
+```text
+Pair Reputation ≥ 70
+AND
+Bonding Curve Reserve ≥ $10,000
+```
+
+Then:
+
+```text
+Pair Stage
+→ Graduation Eligible
+```
+
+For the ETHGlobal demo, full production DEX migration is optional.
+
+A testnet migration or clearly demonstrated graduation state is sufficient.
+
+---
+
+# 13. Sponsored Milestones
+
+Sponsors can attach rewards to milestones.
+
+Example:
+
+```text
+Sponsor:
+Coffee Brand
+
+Milestone:
+Complete a verified coffee-date challenge
+
+Reward:
+20 USDC
+```
+
+Flow:
+
+```text
+Sponsor funds reward
+        ↓
+Pair sees challenge
+        ↓
+Alice + Bob accept
+        ↓
+Pair completes challenge
+        ↓
+Both attest
+        ↓
+Pair Reputation +10
+        +
+20 USDC reward released
+```
+
+### Who receives the sponsored reward?
+
+For the current product model:
+
+> **The reward belongs to the Pair / Pair participants, not automatically to Pair Token investors.**
+
+Token holders do not receive a claim on milestone rewards unless Stud explicitly introduces a separate revenue-sharing mechanism in the future.
+
+That mechanism is **not part of the current MVP**.
+
+---
+
+# 14. Prediction Markets vs Pair Tokens
+
+Stud contains two different market primitives.
+
+| Feature | Individual / Outcome Market | Pair Token Market |
+|---|---|---|
+| What is traded? | YES / NO outcome shares | Pair Token |
+| Example | “Will Alice get a verified match this week?” | `$ALICEBOB` |
+| Lifetime | Ends at resolution | Persistent |
+| Settlement | Objective protocol event | No single settlement date |
+| Investor gain | Correct outcome share redeems for more than entry cost | Sell token later at a higher market price |
+| Main risk | Prediction is wrong | Pair Token demand falls |
+| Reputation directly sets price? | No | No |
+
+---
+
+# 15. World ID
+
+World ID gives Stud Sybil-resistant proof that participants are unique humans.
+
+A valid Stud requires:
 
 ```text
 Wallet
-  +
-World ID Proof
-  ↓
++
+World ID proof
+=
 Verified Stud
 ```
 
-### Sybil Resistance
-
-Without proof-of-humanity, someone could create hundreds of wallets and:
-
-- fake matches,
-- farm reputation,
-- manipulate Pair Tokens,
-- create fake milestone attestations,
-- distort markets.
-
-World ID greatly reduces this problem.
-
-### Pair Formation
-
-A valid Pair can require:
+A valid Pair requires:
 
 ```text
 Verified Human A
@@ -222,1063 +643,168 @@ Mutual Match
 Valid Pair
 ```
 
-World ID proves uniqueness.
+World ID helps reduce:
 
-It does **not** need to reveal sensitive personal identity information onchain.
+- duplicate identities
+- bot profiles
+- mass account farming
+- fake Pair creation
+- Sybil-based reputation farming
+
+World ID does not prove that a relationship is emotionally successful.
 
 ---
 
-# 6. Social Layer
+# 16. Privacy
 
-Stud begins like a familiar social application.
+Dating and social information can be sensitive.
 
-Users can:
+Keep onchain:
 
 ```text
-Create profile
-    ↓
-Discover people
-    ↓
-Swipe / Like
-    ↓
-Mutual interest
-    ↓
-Match
+World ID verification state / nullifier use
+Pair existence
+Pair reputation
+milestone commitment / hash
+milestone status
+attestation state
+Pair market state
+graduation state
 ```
 
-The important difference is what happens after the match.
-
-Traditional dating app:
+Keep private / offchain where possible:
 
 ```text
-Match → Chat
-```
-
-Stud:
-
-```text
-Match
-  ↓
-Chat / Social Interaction
-  +
-Create Pair Identity
-  +
-Create Pair Token
-  +
-Start Pair Reputation
+private messages
+exact locations
+personal photos
+sensitive milestone details
+real names unless explicitly chosen
 ```
 
 ---
 
-# 7. Pair Token
+# 17. Market Integrity
 
-The **Pair Token** is the market-facing representation of the Pair.
+Potential attacks include:
 
-Example:
+- self-matching
+- multiple-account farming
+- fake milestone farming
+- wash trading
+- coordinated token manipulation
+- spam milestone proposals
 
-```text
-Alice + Bob match
+MVP defenses:
 
-→ Pair ID created
-→ $ALICEBOB launched
-```
+- World ID uniqueness
+- Pair market-capacity limits
+- only mutual matches can create Pairs
+- milestone requires two-sided acceptance
+- completion requires two-sided attestation
+- objective protocol-event prediction markets
 
-The Pair Token should not simply be a meme token with no connection to the underlying relationship.
+Future defenses can add:
 
-It is connected to:
-
-- Pair identity,
-- Pair reputation,
-- accepted milestones,
-- completed milestones,
-- market stage,
-- market capacity,
-- liquidity status.
-
----
-
-# 8. Pair Reputation
-
-Pair reputation is the core state variable of the social-financial bridge.
-
-It measures **verified progress**, not popularity alone.
-
-Example:
-
-```text
-Pair Reputation
-
-0       New Pair
-10      First accepted milestone
-20      First completed joint action
-35      Multiple successful milestones
-50      Consistent activity
-70      Established Pair
-90+     Highly established Pair
-```
-
-The actual score does not need to be magical.
-
-For the MVP, it can be extremely simple.
-
-Example:
-
-```text
-+10 reputation per successfully completed milestone
-```
-
-Later it could become multidimensional.
-
-Possible signals:
-
-```text
-pair_age
-accepted_milestones
-completed_milestones
-completion_rate
-mutual_attestation_rate
-activity_consistency
-challenge_diversity
-community_sponsorship
-```
+- reputation cooldowns
+- milestone frequency limits
+- minimum Pair age
+- anti-wash-trading logic
+- challenge diversity requirements
+- richer attestation sources
 
 ---
 
-# 9. Reputation Does NOT Directly Set Price
+# 18. Hackathon MVP
 
-This distinction is extremely important.
+The ETHGlobal MVP should implement the smallest complete loop.
 
-Bad design:
-
-```text
-Pair completes date
-→ Smart contract increases token price 20%
-```
-
-That creates an artificial market.
-
-Stud instead uses:
+### Social
 
 ```text
-Pair completes milestone
-        ↓
-Reputation increases
-        ↓
-Market sees stronger Pair history
-        ↓
-Investors decide whether to buy/sell
-        ↓
-Demand changes
-        ↓
-Price changes naturally
+Connect wallet
+→ World ID verify
+→ create Stud
+→ discover profiles
+→ mutual match
 ```
 
-Therefore:
-
-> **Activities change reputation. Markets change price.**
-
----
-
-# 10. Milestones / Joint Actions
-
-A milestone is a voluntary action that Alice and Bob agree to complete together.
-
-Examples could include:
+### Pair
 
 ```text
-Have a first video call
-Complete a mutual check-in
-Attend an event together
-Complete a shared game/challenge
-Do three mutual check-ins this week
-Maintain activity for seven days
-Complete a sponsored social challenge
+Mutual match
+→ Pair ID
+→ Pair Token
+→ Reputation = 0
+→ Stage = New
+→ Capacity = $500
 ```
 
-Stud should avoid trying to judge subjective questions such as:
+### Milestone
 
 ```text
-"Was the date romantic?"
-"Does Alice truly love Bob?"
-"Was Bob a good partner?"
+Investor / community proposes milestone
+→ Alice accepts
+→ Bob accepts
+→ milestone active
+→ both attest
+→ completed
+→ Reputation +10
 ```
 
-Instead, Stud should verify simple facts:
-
-```text
-Did both participants claim the milestone happened?
-Did they attest before the deadline?
-Were both accounts World ID verified?
-```
-
----
-
-# 11. Who Creates Milestones?
-
-One of the most interesting parts of Stud is that milestones can be **community-driven**.
-
-An investor might propose:
-
-> "Have your first video call before Sunday."
-
-Another might propose:
-
-> "Complete three shared check-ins this week."
-
-But Alice and Bob have complete control.
-
-Flow:
-
-```text
-Investor proposes milestone
-        ↓
-Pair receives proposal
-        ↓
-Alice reviews
-Bob reviews
-        ↓
-Both accept
-        ↓
-Milestone becomes active
-```
-
-If either person rejects it:
-
-```text
-Proposal rejected
-→ Nothing happens
-```
-
-This keeps investor participation interesting without allowing investors to control the people they back.
-
----
-
-# 12. Milestone Attestation
-
-Suppose Alice and Bob accept:
-
-```text
-Milestone:
-"Complete a video call before Sunday"
-```
-
-After completing it:
-
-```text
-Alice → Attest
-Bob   → Attest
-```
-
-The contract checks:
-
-```text
-Alice attested? ✓
-Bob attested?   ✓
-Deadline valid? ✓
-Pair active?    ✓
-```
-
-Then:
-
-```text
-Milestone → Completed
-
-Pair Reputation:
-20 → 30
-```
-
-For the hackathon MVP, mutual attestation is enough.
-
-Stud does not need to build invasive real-world surveillance.
-
----
-
-# 13. Economic Permissions
-
-Reputation becomes valuable because it unlocks **economic permissions**.
-
-This is the central DeFi mechanism.
-
-Think of reputation like a key.
-
-```text
-More verified Pair history
-        ↓
-More protocol permissions
-```
-
-Possible unlocks:
-
-### Stage 1 - New Pair
-
-```text
-Reputation: 0–20
-Market Capacity: $500
-Trading: Stud bonding curve only
-Sponsored Challenges: Limited
-```
-
-### Stage 2 - Growing Pair
-
-```text
-Reputation: 20–50
-Market Capacity: $2,000
-More challenges available
-Larger community participation
-```
-
-### Stage 3 - Established Pair
-
-```text
-Reputation: 50–80
-Market Capacity: $10,000
-Premium sponsored challenges
-Graduation eligibility
-```
-
-### Stage 4 - Graduated Pair
-
-```text
-Reputation: 80+
-Strong market demand
-Liquidity threshold reached
-
-→ Token graduates to DEX liquidity
-```
-
-These numbers are examples, not finalized economics.
-
----
-
-# 14. What Is a Market Capacity Limit?
-
-A market capacity limit controls how much economic exposure a very new Pair can have.
-
-For example:
-
-```text
-New Pair
-
-Maximum token-market capacity:
-$500
-```
-
-Even if people want to put $100,000 into the token immediately, the protocol does not allow it.
-
-Why?
-
-Because Alice and Bob have almost no Pair history yet.
-
-As they build reputation:
-
-```text
-Reputation 0
-→ $500 capacity
-
-Reputation 30
-→ $2,000 capacity
-
-Reputation 60
-→ $10,000 capacity
-```
-
-This creates:
-
-```text
-Proof first
-Capital later
-```
-
-rather than:
-
-```text
-Hype first
-Unlimited capital immediately
-```
-
----
-
-# 15. Bonding Curve
-
-Before graduation, the Pair Token can trade through a simple **bonding curve** inside Stud.
-
-Conceptually:
-
-```text
-More token bought
-→ Token price gradually increases
-
-Token sold
-→ Token price decreases
-```
-
-This creates an early-stage controlled market.
-
-The Pair Token is not immediately thrown into an unrestricted DEX pool.
-
-The bonding curve lets Stud manage:
-
-- early liquidity,
-- price discovery,
-- market limits,
-- graduation thresholds.
-
----
-
-# 16. Graduation
-
-A Pair Token can eventually graduate.
-
-Think of it like:
-
-```text
-Small internal market
-        ↓
-Pair proves itself
-        ↓
-Market demand grows
-        ↓
-Threshold reached
-        ↓
-Graduation
-        ↓
-Open liquidity pool
-```
-
-Graduation should ideally require **both**:
-
-```text
-Social Proof
-+
-Market Proof
-```
-
-For example:
-
-```text
-Pair Reputation ≥ 70
-
-AND
-
-Bonding Curve Liquidity ≥ $10,000
-```
-
-Then:
-
-```text
-$ALICEBOB
-→ liquidity deployed to DEX pool
-→ normal open-market trading begins
-```
-
-This prevents pure hype from being the only graduation mechanism.
-
----
-
-# 17. Why Investors Buy Pair Tokens
-
-This question must have a clear answer.
-
-Investors may buy a Pair Token because they believe:
-
-```text
-The Pair will remain active
-        ↓
-They will complete more milestones
-        ↓
-Reputation will increase
-        ↓
-More economic permissions will unlock
-        ↓
-More people may become interested
-        ↓
-Demand for the token may increase
-```
-
-Importantly, this is still a speculative market.
-
-Stud should not pretend otherwise.
-
-The innovation is that speculation is attached to **verified social progress and protocol permissions**, rather than being a completely context-free meme token.
-
----
-
-# 18. Individual Prediction Markets
-
-Stud can also support markets before or around matching.
-
-Examples:
-
-```text
-Will Alice receive a mutual match this week?
-
-Will Bob reach 5 verified matches this month?
-
-Will Alice and Bob form a Pair?
-
-Will this Pair reach Reputation Level 3 within 30 days?
-
-Will this Pair graduate?
-```
-
-The strongest markets are those based on **objective protocol events**.
-
-For example:
-
-```text
-Pair Reputation ≥ 50 by October 1
-```
-
-is much easier to settle than:
-
-```text
-Will Alice and Bob fall in love?
-```
-
----
-
-# 19. Separate Prediction Markets From Pair Token Price
-
-Stud can contain both, but they are different systems.
-
-## Prediction Market
-
-A market asks a question.
-
-```text
-Will Alice and Bob reach Level 3 this month?
-
-YES / NO
-```
-
-Once the deadline passes, it resolves.
-
----
-
-## Pair Token Market
-
-The Pair Token represents ongoing market demand around the Pair.
-
-```text
-$ALICEBOB
-```
-
-It does not resolve on one date.
-
-It can continue evolving.
-
-This distinction gives Stud two different financial primitives:
-
-```text
-Prediction markets
-→ market on specific outcomes
-
-Pair Tokens
-→ market around persistent Pair identities
-```
-
----
-
-# 20. Sponsored Milestones
-
-Milestones can also carry rewards.
-
-Example:
-
-```text
-Sponsor:
-Coffee Brand
-
-Challenge:
-"Complete a verified coffee-date milestone"
-
-Reward:
-$20
-```
-
-Flow:
-
-```text
-Sponsor funds reward
-        ↓
-Community challenge appears
-        ↓
-Alice + Bob accept
-        ↓
-They complete
-        ↓
-Both attest
-        ↓
-Pair reputation increases
-        +
-Reward unlocks
-```
-
-This gives Pair reputation utility beyond pure speculation.
-
----
-
-# 21. The "Third Identity" Thesis
-
-This is the most distinctive conceptual idea inside Stud.
-
-Blockchain applications normally treat identities individually:
-
-```text
-Alice Wallet
-Bob Wallet
-```
-
-Stud introduces:
-
-```text
-Alice Identity
-+
-Bob Identity
-=
-AliceBob Pair Identity
-```
-
-The Pair has:
-
-- its own token,
-- its own reputation,
-- its own history,
-- its own accepted milestones,
-- its own market,
-- its own lifecycle.
-
-In other words:
-
-> **The relationship edge becomes a first-class onchain entity.**
-
-Instead of blockchain only modeling people and assets, Stud models **relationships themselves** as programmable objects.
-
----
-
-# 22. Pair Lifecycle
-
-A Pair should not need to exist forever.
-
-A future version of Stud can support a full lifecycle:
-
-```text
-Birth
-↓
-Growth
-↓
-Maturity
-↓
-Graduation
-↓
-Continuation OR Dissolution
-```
-
-If Alice and Bob decide to end the Pair:
-
-```text
-Pair Token
-→ frozen / retired / archived
-
-Pair Reputation
-→ final snapshot
-```
-
-Potentially, verified history could contribute back to each person's individual reputation.
-
-For example:
-
-```text
-AliceBob Pair
-Final Reputation: 82
-
-Pair dissolved respectfully
-
-Alice receives:
-"Completed 12 verified Pair milestones"
-
-Bob receives:
-"Completed 12 verified Pair milestones"
-```
-
-This allows reputation to survive even when a particular relationship does not.
-
----
-
-# 23. What Stud Is NOT
-
-Stud is not intended to be:
-
-### A protocol that judges love
-
-Stud cannot prove emotions.
-
-### A system where investors control users
-
-Milestones require Pair consent.
-
-### A system that automatically pumps token prices
-
-Activities affect reputation, not price directly.
-
-### A surveillance application
-
-Real-world actions should not require invasive proof.
-
-### Just another yield vault
-
-The Pair identity and reputation mechanism is the core primitive.
-
----
-
-# 24. Why Blockchain?
-
-Stud does not need blockchain merely because it involves money.
-
-Blockchain matters because the Pair can become a persistent, composable object.
-
-Without blockchain:
-
-```text
-Dating App Match
-→ database row
-→ trapped inside application
-```
-
-With Stud:
-
-```text
-Verified Match
-→ onchain Pair
-→ reputation
-→ token
-→ market
-→ liquidity
-→ composable identity
-```
-
-Other applications could potentially recognize:
-
-```text
-Pair ID
-Pair Reputation
-Pair Age
-Milestone Count
-Graduation Status
-```
-
-The relationship becomes infrastructure.
-
----
-
-# 25. Why DeFi?
-
-DeFi gives the Pair an economic lifecycle.
-
-The social layer provides:
-
-```text
-humans
-matches
-joint actions
-reputation
-```
-
-The DeFi layer provides:
-
-```text
-market formation
-bonding curves
-liquidity
-market caps
-graduation
-prediction markets
-economic incentives
-```
-
-Together:
-
-```text
-Verified Human Activity
-        ↓
-Onchain Reputation
-        ↓
-Economic Permissions
-        ↓
-Open Markets
-```
-
----
-
-# 26. Hackathon MVP
-
-For ETHGlobal Online, the MVP should stay focused.
-
-## Essential Features
-
-### 1. World ID Verification
-
-```text
-Connect Wallet
-→ Verify World ID
-→ Create Stud profile
-```
-
-### 2. Social Discovery
-
-```text
-View verified profiles
-→ Swipe
-→ Mutual match
-```
-
-### 3. Pair Creation
-
-On match:
-
-```text
-Create Pair ID
-Mint Pair Token
-Initialize Pair Reputation
-```
-
-### 4. Milestone Proposals
-
-```text
-Community / investor proposes milestone
-```
-
-### 5. Pair Acceptance
-
-```text
-Alice accepts
-Bob accepts
-→ milestone activated
-```
-
-### 6. Mutual Attestation
-
-```text
-Alice attests
-Bob attests
-→ milestone completed
-```
-
-### 7. Reputation Engine
-
-```text
-Completed milestone
-→ Pair reputation increases
-```
-
-### 8. Bonding-Curve Market
+### Market
 
 ```text
 Investor buys Pair Token
-→ price changes based on demand
+→ bonding curve quote changes with demand
+→ capacity enforced by reputation stage
 ```
 
-### 9. Reputation-Based Unlock
-
-Example:
+### Graduation
 
 ```text
-Reputation 0–20
-→ $500 market cap
-
-Reputation 20+
-→ $2,000 market cap
-```
-
-### 10. Graduation Demo
-
-Show the end state:
-
-```text
-Enough reputation
+Reputation ≥ 70
 +
-Enough liquidity
-→ Pair becomes graduation eligible
+Reserve ≥ $10,000
+→ Graduation Eligible
 ```
 
-The MVP does not necessarily need a production-grade DEX deployment.
-
-A clear graduation simulation or testnet integration can demonstrate the mechanism.
-
----
-
-# 27. Example User Journey
-
-## Step 1 - Alice Joins
-
-Alice connects her wallet.
+### Optional Individual Market
 
 ```text
-World ID verified ✓
-```
-
-She creates her Stud profile.
-
----
-
-## Step 2 - Bob Joins
-
-Bob does the same.
-
-```text
-World ID verified ✓
+Will Alice receive ≥1 verified mutual match by deadline?
+YES / NO shares
+→ resolve from protocol state
 ```
 
 ---
 
-## Step 3 - They Match
-
-Alice likes Bob.
-
-Bob likes Alice.
-
-```text
-Mutual Match ✓
-```
-
-Stud creates:
-
-```text
-Pair:
-AliceBob
-
-Token:
-$ALICEBOB
-
-Reputation:
-0
-
-Market Stage:
-Stage 1
-```
-
----
-
-## Step 4 - Community Proposes a Challenge
-
-An investor proposes:
-
-> "Complete your first video call by Sunday."
-
-Alice accepts.
-
-Bob accepts.
-
-The challenge becomes active.
-
----
-
-## Step 5 - They Complete It
-
-On Saturday:
-
-```text
-Alice → Attest
-Bob → Attest
-```
-
-The contract verifies both.
-
-```text
-Milestone Completed ✓
-```
-
----
-
-## Step 6 - Pair Reputation Grows
-
-```text
-Before:
-Reputation = 10
-
-After:
-Reputation = 20
-```
-
-This unlocks:
-
-```text
-Market Capacity:
-$500 → $2,000
-```
-
----
-
-## Step 7 - Investors React
-
-Investors see:
-
-```text
-Verified Pair
-Completed Milestone
-Higher Reputation
-More Economic Capacity
-```
-
-Some decide to buy $ALICEBOB.
-
-Demand increases.
-
-The bonding curve price moves.
-
----
-
-## Step 8 - The Pair Keeps Growing
-
-Over several weeks:
-
-```text
-Milestones Completed: 8
-Reputation: 75
-Bonding Curve Liquidity: threshold reached
-```
-
-Stud displays:
-
-```text
-Graduation Eligible 🎓
-```
-
-The Pair Token can now move toward open liquidity.
-
----
-
-# 28. Smart Contract Model
-
-A possible contract architecture:
+# 19. Suggested Contract Architecture
 
 ```text
 StudRegistry
 │
+├── WorldIDVerifier
 ├── StudProfile
-│
-├── WorldIDVerification
-│
 ├── MatchRegistry
 │
 ├── PairFactory
 │   └── Pair
 │       ├── PairToken
-│       ├── PairReputation
-│       └── PairState
+│       ├── PairState
+│       └── PairReputation
 │
 ├── MilestoneManager
-│
 ├── AttestationManager
-│
 ├── BondingCurveMarket
+├── GraduationManager
 │
-└── GraduationManager
+└── OutcomeMarket        [optional MVP module]
 ```
 
 ---
 
-# 29. Possible Data Model
+# 20. Core Data Model
 
 ## Stud
 
@@ -1286,12 +812,9 @@ StudRegistry
 struct Stud {
     address owner;
     bytes32 worldIdNullifier;
-    uint256 individualReputation;
     bool verified;
 }
 ```
-
----
 
 ## Pair
 
@@ -1302,42 +825,13 @@ struct Pair {
     address userB;
     address pairToken;
     uint256 reputation;
-    uint256 milestoneCount;
+    uint256 completedMilestones;
     uint256 createdAt;
     PairStage stage;
 }
 ```
 
----
-
-## Milestone
-
-```solidity
-struct Milestone {
-    uint256 milestoneId;
-    uint256 pairId;
-
-    string description;
-
-    address proposer;
-
-    bool acceptedByA;
-    bool acceptedByB;
-
-    bool attestedByA;
-    bool attestedByB;
-
-    uint256 deadline;
-
-    MilestoneStatus status;
-}
-```
-
----
-
-# 30. Pair Stages
-
-Example:
+## PairStage
 
 ```solidity
 enum PairStage {
@@ -1350,431 +844,318 @@ enum PairStage {
 }
 ```
 
-Stage transition example:
+## Milestone
 
-```text
-New
-  ↓ Reputation 20
+```solidity
+struct Milestone {
+    uint256 milestoneId;
+    uint256 pairId;
+    bytes32 contentHash;
+    address proposer;
+    bool acceptedByA;
+    bool acceptedByB;
+    bool attestedByA;
+    bool attestedByB;
+    uint256 deadline;
+    MilestoneStatus status;
+}
+```
 
-Growing
-  ↓ Reputation 50
+## Optional Individual Outcome Market
 
-Established
-  ↓ Reputation 70 + liquidity threshold
-
-Graduation Eligible
-  ↓ LP deployed
-
-Graduated
+```solidity
+struct OutcomeMarket {
+    uint256 marketId;
+    uint256 studId;
+    bytes32 conditionHash;
+    uint256 deadline;
+    bool resolved;
+    bool outcome;
+}
 ```
 
 ---
 
-# 31. Reputation Engine - MVP
+# 21. Complete Investor Journey
 
-Keep the first version transparent.
-
-Example:
+## A. Investor backs an individual outcome
 
 ```text
-Match Created
-+5
+Alice is World ID verified
 
-Accepted Milestone
-+0
+Market:
+"Will Alice receive ≥1 verified mutual match by Sep 30?"
 
-Completed Milestone
-+10
+Investor buys:
+100 YES shares at $0.35
 
-Three Consecutive Completed Milestones
-+10 bonus
+Cost:
+$35
 ```
 
-Later, Stud can evolve into a richer reputation system.
+If Alice receives a qualifying match before the deadline:
 
-The first version should be understandable enough that a user can answer:
+```text
+YES resolves at $1
 
-> "Why is this Pair reputation 45?"
+Investor receives:
+$100
 
-without needing a black-box algorithm.
+Gross profit:
+$65
+```
+
+If she does not:
+
+```text
+YES resolves at $0
+
+Investor loses:
+$35
+```
 
 ---
 
-# 32. Privacy
+## B. Investor backs a Pair
 
-Dating and relationship data can be highly sensitive.
-
-Stud should minimize what goes onchain.
-
-Good onchain data:
+Alice and Bob match:
 
 ```text
-Pair exists
-Pair reputation
-Milestone hash
-Milestone status
-Attestation state
-Market state
-```
-
-Avoid putting:
-
-```text
-private messages
-exact locations
-personal photos
-sensitive relationship information
-real names unless explicitly desired
-```
-
-Milestone details could be stored offchain with only a commitment/hash placed onchain.
-
----
-
-# 33. Consent
-
-Consent must be part of the protocol design.
-
-A milestone should only become active when:
-
-```text
-Alice accepts
-AND
-Bob accepts
-```
-
-Investor:
-
-```text
-can propose
-cannot force
-```
-
-Community:
-
-```text
-can suggest
-cannot force
-```
-
 Pair:
+AliceBob
 
-```text
-controls participation
-```
-
-This makes the social mechanics far healthier and also produces a cleaner product story.
-
----
-
-# 34. Market Integrity
-
-Stud should assume users may try to game financial incentives.
-
-Potential attacks include:
-
-```text
-fake accounts
-self-matching
-multiple identities
-fake attestations
-wash trading
-coordinated token manipulation
-milestone farming
-```
-
-World ID helps with Sybil resistance.
-
-Other future protections could include:
-
-- reputation cooldowns,
-- milestone frequency limits,
-- market exposure caps,
-- minimum Pair age,
-- anti-wash-trading rules,
-- challenge diversity requirements,
-- graduated reputation weights.
-
-For the hackathon MVP, simple market caps and World ID already provide a strong story.
-
----
-
-# 35. Why This Is Interesting for ETHGlobal
-
-Stud combines several crypto-native primitives in a way that is easy to demonstrate visually:
-
-```text
-Proof of Human
-+
-Social Graph
-+
-Onchain Reputation
-+
-Prediction Markets
-+
-Bonding Curves
-+
-Token Markets
-+
-Liquidity Graduation
-```
-
-The main innovation is not:
-
-> "Dating app with a token."
-
-It is:
-
-> **A verified social relationship becomes a programmable onchain economic identity that can earn reputation and progressively unlock market permissions.**
-
----
-
-# 36. Demo Story
-
-A strong hackathon demo can be very simple.
-
-### Screen 1
-
-Alice connects wallet.
-
-```text
-World ID verified ✓
-```
-
-### Screen 2
-
-Bob is shown.
-
-Alice swipes right.
-
-Bob has already liked Alice.
-
-```text
-IT'S A MATCH
-```
-
-### Screen 3
-
-Animation:
-
-```text
-New Pair Born
-
-Alice + Bob
-
+Token:
 $ALICEBOB
 
-Pair Reputation: 0
-Market Limit: $500
+Reputation:
+0
+
+Capacity:
+$500
 ```
 
-### Screen 4
-
-Investor proposes:
+Investor buys:
 
 ```text
-"Complete your first video call this week."
+200 tokens
+Average price = $0.40
+Cost = $80
 ```
 
-### Screen 5
-
-Alice + Bob accept.
-
-Later both attest.
+The Pair completes two milestones:
 
 ```text
-Milestone completed ✓
+Reputation:
+0 → 10 → 20
 
-Pair reputation:
-10 → 20
-```
-
-### Screen 6
-
-Protocol displays:
-
-```text
-NEW LEVEL UNLOCKED
-
-Market Limit:
+Market capacity:
 $500 → $2,000
 ```
 
-### Screen 7
+Other market participants decide the stronger Pair state is attractive and buy.
 
-Investor buys Pair Token.
-
-Bonding curve moves.
-
-### Screen 8
-
-Show future state:
+If the investor later sells:
 
 ```text
-Reputation: 75
-Liquidity Threshold: Reached
+200 tokens
+Average sell price = $0.65
+Proceeds = $130
 
-PAIR READY TO GRADUATE
+Gross gain = $50
 ```
 
-That communicates the entire concept within a few minutes.
+The gain came from market demand and resale price - not from the protocol directly increasing the token price.
 
 ---
 
-# 37. Potential Future Directions
+# 22. FAQ
 
-Stud can evolve well beyond dating.
+### What is Stud?
 
-## Pair Credit
+Stud is a World ID–verified social + market protocol. Verified humans discover each other and match; a mutual match can create a new shared Pair identity with its own reputation, token, milestones, and market lifecycle.
 
-A mature Pair reputation could eventually be used as an input for credit decisions.
+### Can investors back an individual Stud?
+
+Yes, but the current MVP should do this through **objective prediction markets**, not through an individual human token. Example: “Will Alice receive a verified mutual match by September 30?”
+
+### How does an investor make money from an individual Stud market?
+
+The investor buys YES or NO outcome shares. A winning share redeems for `1 USDC`; a losing share redeems for `0`. Profit depends on the investor's entry price and whether the objective event occurs.
+
+### Does an investor own part of a Stud?
+
+No. Stud does not represent ownership, equity, or control over a person.
+
+### How do investors invest in a Pair?
+
+After two verified users mutually match, Stud creates a Pair Token such as `$ALICEBOB`. Investors can buy and sell the Pair Token through the controlled bonding-curve market.
+
+### How does a Pair Token investor make money?
+
+A Pair Token investor can make money if they later sell at a higher effective market price than they paid. They can lose money if demand falls and they sell lower.
+
+### Does completing a milestone automatically increase Pair Token price?
+
+No. Completing a mutually accepted milestone increases Pair reputation by `+10` in the MVP. Investors then decide whether to buy or sell. Only market demand changes the token price.
+
+### What does reputation unlock?
+
+For the MVP:
 
 ```text
-Strong shared history
-→ access to specialized credit
+Reputation 0–19  → $500 market capacity
+Reputation 20–49 → $2,000 market capacity
+Reputation 50–69 → $10,000 market capacity
+Reputation 70+   → graduation can become eligible
 ```
 
-This should be considered a later-stage experiment, not an MVP promise.
+### What is market capacity?
 
----
+It is the maximum USDC reserve / economic exposure allowed inside the Pair's controlled bonding-curve market at its current stage.
 
-## Pair DAOs
+### Can investors force a Pair to complete challenges?
 
-Multiple established Pairs could form groups.
+No. Investors can propose milestones, but both Pair members must accept before a milestone becomes active.
+
+### Who receives a sponsored milestone reward?
+
+The Pair / Pair participants receive the reward after successful completion and mutual attestation. Pair Token holders do not automatically receive milestone rewards.
+
+### What triggers graduation?
+
+For the MVP:
 
 ```text
-Pair A
-Pair B
-Pair C
-    ↓
-Social Collective
+Pair Reputation ≥ 70
+AND
+Bonding Curve Reserve ≥ $10,000
 ```
 
+The Pair then becomes `Graduation Eligible`.
+
+### What happens after graduation?
+
+The Pair Token can move from the controlled Stud market toward open DEX liquidity. A production-grade DEX migration is not required for the hackathon demo.
+
+### Why use World ID?
+
+World ID helps ensure each Stud is a unique human and reduces bots, duplicate accounts, fake Pair creation, and Sybil-based reputation farming.
+
+### Does Stud verify whether two people actually love each other?
+
+No. Stud only uses objective protocol state and mutual attestations. It does not attempt to judge emotions.
+
 ---
 
-## Pair-to-Pair Markets
+# 23. What Stud Is Not
 
-Markets could emerge around Pair competitions or collaborative milestones.
+Stud is not:
+
+- ownership of people
+- an investor-controlled dating protocol
+- a protocol that judges love
+- a mechanism that automatically pumps token prices after dates
+- a surveillance system
+- a guaranteed investment-return product
+- a generic yield vault
 
 ---
 
-## Sponsored Social Experiences
-
-Restaurants, games, travel companies, event organizers, and communities could sponsor challenges.
-
----
-
-## Pair Reputation Portability
-
-Other protocols could query:
+# 24. Demo Story
 
 ```text
-Is this Pair verified?
-How old is it?
-What is its reputation?
-How many milestones has it completed?
-Has it graduated?
+1. Alice verifies with World ID.
+
+2. Bob verifies with World ID.
+
+3. Alice and Bob mutually match.
+
+4. Stud creates:
+   AliceBob Pair
+   $ALICEBOB
+   Reputation = 0
+   Capacity = $500
+
+5. Investor proposes:
+   "Complete your first video call this week."
+
+6. Alice accepts.
+   Bob accepts.
+
+7. Both later attest completion.
+
+8. Reputation:
+   0 → 10
+
+9. Another completed milestone:
+
+   Reputation:
+   10 → 20
+
+   Market Capacity:
+   $500 → $2,000
+
+10. Investors buy / sell $ALICEBOB.
+    Bonding curve price moves from demand.
+
+11. Future-state demo:
+
+    Reputation ≥ 70
+    Reserve ≥ $10,000
+
+    → GRADUATION ELIGIBLE
 ```
 
 ---
 
-## Full Relationship Lifecycle
+# 25. Product Principles
 
-```text
-Match
-→ Pair Birth
-→ Growth
-→ Maturity
-→ Graduation
-→ Retirement
-```
+### Humans First
 
-When retired, Pair history could become attestations attached to individual identities.
+World ID ensures Stud begins with unique humans.
 
----
+### Consent First
 
-# 38. Product Principles
+Investors can propose. Pairs decide.
 
-Stud should follow five principles.
+### Objective Markets
 
-### 1. Humans First
+Individual prediction markets resolve on verifiable protocol events.
 
-World ID ensures the system begins with real people.
+### Reputation Before Capital
 
-### 2. Consent First
+New Pairs have deliberately limited market exposure.
 
-Investors may propose.
+### Reputation ≠ Price
 
-Pairs decide.
+Reputation changes permissions. Demand changes price.
 
-### 3. Reputation Before Capital
+### Relationships as Infrastructure
 
-Economic permissions grow only after verified history develops.
-
-### 4. Reputation ≠ Price
-
-The protocol changes reputation.
-
-The market changes price.
-
-### 5. Relationships as Infrastructure
-
-The Pair is not just UI state.
-
-It becomes a programmable onchain entity.
+The Pair is a programmable onchain identity, not only a dating-app database row.
 
 ---
 
-# 39. One-Sentence Pitch
+# 26. One-Sentence Pitch
 
-> **Stud is a World ID–verified social and DeFi protocol where a mutual match creates a new shared onchain identity whose reputation grows through consent-based joint milestones and progressively unlocks larger markets and liquidity.**
-
----
-
-# 40. Short Pitch
-
-Stud begins like a dating app for verified humans.
-
-Users verify with World ID, discover people, and match.
-
-But when Alice and Bob match, Stud creates something new: a **Pair Token**, representing their shared onchain identity.
-
-Community members and investors can propose milestones for the Pair, but Alice and Bob decide which ones to accept.
-
-When both complete and attest to an accepted milestone, their Pair reputation increases.
-
-Reputation does not artificially pump token price. Instead, it unlocks progressively larger economic permissions-higher market limits, sponsored challenges, and eventually eligibility to graduate from a controlled bonding curve into an open liquidity pool.
-
-**Two humans match. A third identity is born. That identity grows socially and economically onchain.**
+> **Stud is a World ID–verified social + market protocol where investors can trade objective outcomes around individual verified users, while a mutual match creates a new Pair identity whose consent-based reputation progressively unlocks larger token markets and liquidity.**
 
 ---
 
-# 41. Current Hackathon Thesis
+# 27. Short Pitch
 
-The current direction for Stud is:
+Stud begins as a social app for World ID–verified humans.
 
-```text
-WORLD ID
-    ↓
-REAL HUMANS
-    ↓
-SOCIAL MATCH
-    ↓
-PAIR TOKEN / THIRD IDENTITY
-    ↓
-CONSENT-BASED MILESTONES
-    ↓
-MUTUAL ATTESTATIONS
-    ↓
-PAIR REPUTATION
-    ↓
-ECONOMIC PERMISSIONS
-    ↓
-BONDING-CURVE MARKET
-    ↓
-GRADUATION
-```
+Before a match, market participants can take positions on objective events such as whether a verified Stud will receive a mutual match by a deadline.
 
-That is the core product.
+When two people mutually match, Stud creates a new shared onchain identity: the **Pair**.
 
-Everything else should support this loop rather than distract from it.
+The Pair receives a token, starts at zero reputation, and initially has only `$500` of controlled market capacity.
+
+Investors and community members can propose milestones, but both members must accept them. Every successfully completed and mutually attested milestone adds `+10` Pair reputation.
+
+At `20` reputation, market capacity increases to `$2,000`. At `50`, it increases to `$10,000`. Once reputation reaches at least `70` and the bonding-curve reserve reaches `$10,000`, the Pair becomes eligible to graduate toward open liquidity.
+
+Pair reputation never directly changes token price. Investors make or lose money based on the price at which they buy and later sell as market demand changes.
+
+> **Two humans match. A third identity is born. Reputation controls permission; markets control price.**

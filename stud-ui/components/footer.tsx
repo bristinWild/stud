@@ -1,164 +1,228 @@
 import Link from "next/link"
-import { Twitter, Linkedin, Instagram, Facebook } from "lucide-react"
+import {
+  Twitter,
+  Linkedin,
+  Instagram,
+  Github,
+  ArrowUpRight,
+} from "lucide-react"
 import Image from "next/image"
 
 const footerLinks = {
   product: [
-    { label: "Search", href: "#" },
-    { label: "List", href: "#" },
-    { label: "Pricing", href: "#" },
-    { label: "App", href: "#" },
+    { label: "How it works", href: "#how-it-works" },
+    { label: "Pair Identity", href: "#features" },
+    { label: "Pair Markets", href: "#pricing" },
+    { label: "FAQ", href: "#faq" },
   ],
-  company: [
-    { label: "About", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Press", href: "#" },
-    { label: "Blog", href: "#" },
+
+  protocol: [
+    { label: "World ID", href: "#" },
+    { label: "Reputation", href: "#features" },
+    { label: "Milestones", href: "#features" },
+    { label: "Graduation", href: "#pricing" },
   ],
+
+  resources: [
+    { label: "Documentation", href: "#" },
+    { label: "GitHub", href: "#" },
+    { label: "ETHGlobal", href: "#" },
+    { label: "Demo", href: "#" },
+  ],
+
   legal: [
-    { label: "Terms", href: "#" },
     { label: "Privacy", href: "#" },
-    { label: "Cookies", href: "#" },
-    { label: "Legal", href: "#" },
-  ],
-  support: [
-    { label: "Help Center", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "FAQ", href: "#" },
-    { label: "Report", href: "#" },
+    { label: "Terms", href: "#" },
+    { label: "Risk Disclosure", href: "#" },
+    { label: "Market Disclaimer", href: "#" },
   ],
 }
 
 export function Footer() {
   return (
     <div className="relative">
-      <div className="absolute -top-[20vw] left-0 right-0 w-full h-[50vw] z-0 overflow-hidden">
-        <Image src="/images/footer-bg.png" alt="Tuscan landscape" fill className="object-cover" priority />
+      {/* =========================
+          VISUAL FOOTER BANNER
+      ========================== */}
+      <div className="relative h-[42vw] min-h-[320px] max-h-[580px] overflow-hidden">
+        <Image
+          src="/images/footer-bg.jpg"
+          alt="Stud community"
+          fill
+          className="object-cover"
+        />
+
+        {/* Dark / Stud tint */}
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-stud-bg/10" />
+
+        {/* Small message */}
+        <div className="absolute left-1/2 top-12 z-10 -translate-x-1/2 text-center">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.3em] text-white/70">
+            Verified humans. Shared identities.
+          </p>
+
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
+            Match with real people, build reputation together, and create
+            something that lives beyond the match.
+          </p>
+        </div>
+
+        {/* Giant STUD */}
+        <div className="absolute bottom-[-1.5vw] left-0 right-0 z-10 flex justify-center">
+          <h2 className="whitespace-nowrap text-center text-[25vw] font-bold leading-[0.72] tracking-[-0.08em] text-white">
+            STUD
+          </h2>
+        </div>
       </div>
 
-      <div className="absolute -top-[15vw] left-0 right-0 flex items-end justify-center overflow-visible pointer-events-none z-10">
-        <h2 className="font-bold text-center text-[28vw] sm:text-[25vw] md:text-[22vw] lg:text-[20vw] leading-[0.85] tracking-tighter text-white whitespace-nowrap">
-          STUD
-        </h2>
-      </div>
-
-      <footer id="contact" className="relative z-20 border-t border-border py-16 px-6 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+      {/* =========================
+          ACTUAL FOOTER
+      ========================== */}
+      <footer
+        id="contact"
+        className="relative border-t border-stud-ink/10 bg-background px-6 py-16"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-14 grid grid-cols-2 gap-10 md:grid-cols-5">
+            {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <svg
-                  className="w-5 h-5 text-foreground"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                <span className="text-base font-medium text-foreground">Homie</span>
+              <Link href="/" className="mb-5 inline-flex items-center">
+                <span className="text-xl font-semibold tracking-[-0.04em] text-stud-ink">
+                  STUD
+                </span>
               </Link>
-              <p className="text-sm text-muted-foreground mb-6">Peer-to-peer rentals, simplified.</p>
-              <div className="flex gap-4">
-                <Link
-                  href="#"
-                  className="w-9 h-9 border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                >
-                  <Twitter className="w-4 h-4" />
-                </Link>
-                <Link
-                  href="#"
-                  className="w-9 h-9 border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                >
-                  <Linkedin className="w-4 h-4" />
-                </Link>
-                <Link
-                  href="#"
-                  className="w-9 h-9 border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                >
-                  <Instagram className="w-4 h-4" />
-                </Link>
-                <Link
-                  href="#"
-                  className="w-9 h-9 border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                >
-                  <Facebook className="w-4 h-4" />
-                </Link>
+
+              <p className="mb-6 max-w-[220px] text-sm leading-relaxed text-stud-ink/50">
+                World ID–verified social markets built around real human
+                connections.
+              </p>
+
+              {/* Socials */}
+              <div className="flex gap-3">
+                <SocialLink>
+                  <Twitter className="h-4 w-4" />
+                </SocialLink>
+
+                <SocialLink>
+                  <Github className="h-4 w-4" />
+                </SocialLink>
+
+                <SocialLink>
+                  <Linkedin className="h-4 w-4" />
+                </SocialLink>
+
+                <SocialLink>
+                  <Instagram className="h-4 w-4" />
+                </SocialLink>
               </div>
             </div>
 
-            <div>
-              <h4 className="text-sm font-medium text-foreground mb-4 uppercase tracking-wider">Product</h4>
-              <ul className="space-y-3">
-                {footerLinks.product.map((link, i) => (
-                  <li key={i}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Product */}
+            <FooterColumn
+              title="Product"
+              links={footerLinks.product}
+            />
 
-            <div>
-              <h4 className="text-sm font-medium text-foreground mb-4 uppercase tracking-wider">Company</h4>
-              <ul className="space-y-3">
-                {footerLinks.company.map((link, i) => (
-                  <li key={i}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Protocol */}
+            <FooterColumn
+              title="Protocol"
+              links={footerLinks.protocol}
+            />
 
-            <div>
-              <h4 className="text-sm font-medium text-foreground mb-4 uppercase tracking-wider">Legal</h4>
-              <ul className="space-y-3">
-                {footerLinks.legal.map((link, i) => (
-                  <li key={i}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Resources */}
+            <FooterColumn
+              title="Resources"
+              links={footerLinks.resources}
+            />
 
-            <div>
-              <h4 className="text-sm font-medium text-foreground mb-4 uppercase tracking-wider">Support</h4>
-              <ul className="space-y-3">
-                {footerLinks.support.map((link, i) => (
-                  <li key={i}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Legal */}
+            <FooterColumn
+              title="Legal"
+              links={footerLinks.legal}
+            />
           </div>
 
-          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-muted-foreground">© 2026 Homie. All rights reserved.</p>
-            <p className="text-xs text-muted-foreground">Homie Inc. - Registered real estate agent</p>
+          {/* Launch strip */}
+          <div className="mb-10 flex flex-col items-start justify-between gap-5 rounded-3xl border border-stud-ink/10 bg-stud-light/40 p-6 sm:flex-row sm:items-center">
+            <div>
+              <p className="mb-1 text-lg font-medium text-stud-ink">
+                Ready to enter Stud?
+              </p>
+
+              <p className="text-sm text-stud-ink/50">
+                Verify as a unique human and start matching.
+              </p>
+            </div>
+
+            <button className="group flex items-center gap-3 rounded-full bg-stud-ink py-2 pl-5 pr-2 text-sm font-medium text-stud-bg transition-transform duration-300 hover:scale-[1.02]">
+              Launch Stud
+
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-stud-bg">
+                <ArrowUpRight className="h-4 w-4 text-stud-ink" />
+              </span>
+            </button>
+          </div>
+
+          {/* Bottom */}
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-stud-ink/10 pt-8 md:flex-row">
+            <p className="text-xs text-stud-ink/40">
+              © 2026 Stud. Built for ETHGlobal.
+            </p>
+
+            <p className="text-xs text-stud-ink/40">
+              Reputation changes permissions. Markets change price.
+            </p>
           </div>
         </div>
       </footer>
     </div>
+  )
+}
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string
+  links: {
+    label: string
+    href: string
+  }[]
+}) {
+  return (
+    <div>
+      <h4 className="mb-5 text-xs font-medium uppercase tracking-[0.18em] text-stud-ink">
+        {title}
+      </h4>
+
+      <ul className="space-y-3">
+        {links.map((link) => (
+          <li key={link.label}>
+            <Link
+              href={link.href}
+              className="text-sm text-stud-ink/50 transition-colors hover:text-stud-ink"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function SocialLink({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      href="#"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-stud-ink/10 text-stud-ink/50 transition-all duration-300 hover:border-stud-ink/25 hover:bg-stud-ink hover:text-stud-bg"
+    >
+      {children}
+    </Link>
   )
 }
