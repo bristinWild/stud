@@ -19,8 +19,8 @@ const pairs = [
     milestones: 4,
   },
   {
-    names: "Maya × Noah",
-    token: "$MAYANOAH",
+    names: "Kai × Noah",
+    token: "$KaiNOAH",
     initials: ["M", "N"],
     reputation: 67,
     stage: "Established",

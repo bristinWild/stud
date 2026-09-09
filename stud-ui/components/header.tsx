@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { Menu, X, ArrowUpRight } from "lucide-react"
+import Link from "next/link"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -166,9 +167,12 @@ export function Header() {
               `}
             >
 
-              <span className="text-sm font-medium">
+              <Link
+                href="/launch"
+                className="text-sm font-medium"
+              >
                 Launch Stud
-              </span>
+              </Link>
 
               <span
                 className={`
@@ -287,9 +291,12 @@ export function Header() {
                 }
               `}
             >
-              <span className="text-sm font-medium">
+              <Link
+                href="/launch"
+                className="text-sm font-medium"
+              >
                 Launch Stud
-              </span>
+              </Link>
 
               <span className="w-7 h-7 ml-3 rounded-full bg-stud-bg flex items-center justify-center">
                 <ArrowUpRight className="w-4 h-4 text-stud-ink" />

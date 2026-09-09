@@ -5,6 +5,7 @@ import {
   HeartHandshake,
   TrendingUp,
 } from "lucide-react"
+import Link from "next/link"
 
 export function CTASection() {
   return (
@@ -40,9 +41,15 @@ export function CTASection() {
           {/* Buttons */}
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <button className="group relative flex items-center justify-center gap-0 overflow-hidden rounded-full bg-stud-ink py-1.5 pl-6 pr-1.5 text-stud-bg transition-all duration-300 hover:scale-[1.02]">
-              <span className="pr-4 text-sm font-medium">
+              {/* <span className="pr-4 text-sm font-medium">
                 Launch Stud
-              </span>
+              </span> */}
+              <Link
+                href="/launch"
+                className="pr-4 text-sm font-medium"
+              >
+                Launch Stud
+              </Link>
 
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stud-bg">
                 <ArrowUpRight className="h-4 w-4 text-stud-ink" />

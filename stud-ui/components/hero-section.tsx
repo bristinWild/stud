@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 export function HeroSection() {
   const [scrollProgress, setScrollProgress] = useState(0)
@@ -144,9 +145,15 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-10 flex items-center justify-center gap-4"
           >
-            <button className="rounded-full bg-white text-stud-ink px-6 py-3 text-sm font-medium hover:bg-white/90 transition">
+            {/* <button className="rounded-full bg-white text-stud-ink px-6 py-3 text-sm font-medium hover:bg-white/90 transition">
               Launch Stud
-            </button>
+            </button> */}
+            <Link
+              href="/launch"
+              className="rounded-full bg-white text-stud-ink px-6 py-3 text-sm font-medium hover:bg-white/90 transition"
+            >
+              Launch Stud
+            </Link>
 
             <a
               href="#how-it-works"
