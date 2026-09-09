@@ -258,7 +258,7 @@ export default function DiscoverPage() {
                         profile={match}
                         onClose={() => setMatch(null)}
                         onCreatePair={() =>
-                            router.push(`/stud/pair?match=${match.id}`)
+                            router.push("/stud/pair/alice-leo")
                         }
                     />
                 )}

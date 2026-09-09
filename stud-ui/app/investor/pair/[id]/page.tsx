@@ -1,14 +1,21 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
+
 import {
     ArrowLeft,
     ArrowUpRight,
     BadgeCheck,
+    CheckCircle2,
+    Circle,
     HeartHandshake,
+    LockKeyhole,
     ShieldCheck,
+    Sparkles,
     TrendingUp,
+    Trophy,
 } from "lucide-react"
+
 import { useState } from "react"
 
 const pairData = {
@@ -100,6 +107,57 @@ const pairData = {
     },
 }
 
+const milestoneData = {
+    "alice-leo": [
+        {
+            id: 1,
+            title: "First video call",
+            status: "completed",
+            reputation: 10,
+            date: "Sep 6, 2026",
+            proposer: "Community",
+        },
+        {
+            id: 2,
+            title: "Three mutual check-ins",
+            status: "completed",
+            reputation: 10,
+            date: "Sep 8, 2026",
+            proposer: "Investor 0x72...91A",
+        },
+        {
+            id: 3,
+            title: "Coffee challenge",
+            status: "active",
+            reputation: 10,
+            date: "Ends Sep 12",
+            proposer: "Community",
+        },
+    ],
+
+    "kai-noah": [
+        {
+            id: 1,
+            title: "First video call",
+            status: "completed",
+            reputation: 10,
+            date: "Sep 2, 2026",
+            proposer: "Community",
+        },
+    ],
+
+    "zara-kai": [
+        {
+            id: 1,
+            title: "Seven-day activity streak",
+            status: "completed",
+            reputation: 10,
+            date: "Sep 4, 2026",
+            proposer: "Community",
+        },
+    ],
+}
+
 
 
 export default function PairMarketPage() {
@@ -123,6 +181,42 @@ export default function PairMarketPage() {
         pair.capacity - pair.reserve,
         0
     )
+
+    const milestones =
+        milestoneData[
+        pair.id as keyof typeof milestoneData
+        ] ?? []
+
+    const graduationReputation = 70
+    const graduationReserve = 10000
+
+    const reputationGraduationProgress = Math.min(
+        (pair.reputation / graduationReputation) * 100,
+        100
+    )
+
+    const reserveGraduationProgress = Math.min(
+        (pair.reserve / graduationReserve) * 100,
+        100
+    )
+
+    const nextUnlock =
+        pair.reputation < 20
+            ? {
+                reputation: 20,
+                capacity: "$2,000",
+            }
+            : pair.reputation < 50
+                ? {
+                    reputation: 50,
+                    capacity: "$10,000",
+                }
+                : pair.reputation < 70
+                    ? {
+                        reputation: 70,
+                        capacity: "Graduation eligibility",
+                    }
+                    : null
 
     return (
         <main className="min-h-screen bg-background text-[#3D3B3A]">
@@ -318,6 +412,14 @@ export default function PairMarketPage() {
                     setTradeMode={setTradeMode}
                     tradeAmount={tradeAmount}
                     setTradeAmount={setTradeAmount}
+                />
+
+                <PairProgressSection
+                    pair={pair}
+                    milestones={milestones}
+                    nextUnlock={nextUnlock}
+                    reputationGraduationProgress={reputationGraduationProgress}
+                    reserveGraduationProgress={reserveGraduationProgress}
                 />
             </div>
         </main>
@@ -701,6 +803,410 @@ function QuoteRow({
 
             <span className="text-sm font-medium">
                 {value}
+            </span>
+        </div>
+    )
+}
+
+function PairProgressSection({
+    pair,
+    milestones,
+    nextUnlock,
+    reputationGraduationProgress,
+    reserveGraduationProgress,
+}: {
+    pair: {
+        reputation: number
+        reserve: number
+        capacity: number
+        stage: string
+        token: string
+    }
+
+    milestones: {
+        id: number
+        title: string
+        status: string
+        reputation: number
+        date: string
+        proposer: string
+    }[]
+
+    nextUnlock: {
+        reputation: number
+        capacity: string
+    } | null
+
+    reputationGraduationProgress: number
+    reserveGraduationProgress: number
+}) {
+    const graduationEligible =
+        pair.reputation >= 70 &&
+        pair.reserve >= 10000
+
+    return (
+        <section className="mt-20 pb-20">
+            {/* HEADER */}
+            <div className="mb-10">
+                <p className="mb-3 text-xs uppercase tracking-[0.24em] text-[#3D3B3A]/35">
+                    Pair progression
+                </p>
+
+                <h2 className="font-serif text-4xl md:text-5xl">
+                    Reputation creates permission.
+                </h2>
+
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#3D3B3A]/45">
+                    Completed milestones strengthen the Pair&apos;s verified history.
+                    Reputation does not directly change token price — it unlocks larger
+                    economic permissions inside Stud.
+                </p>
+            </div>
+
+            {/* =========================
+          PROGRESS + NEXT UNLOCK
+      ========================== */}
+            <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+
+                {/* Reputation */}
+                <div className="rounded-[2.5rem] border border-[#3D3B3A]/10 p-8">
+                    <div className="mb-10 flex items-start justify-between">
+                        <div>
+                            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-[#3D3B3A]/35">
+                                Pair reputation
+                            </p>
+
+                            <p className="text-6xl font-light">
+                                {pair.reputation}
+                                <span className="ml-2 text-xl text-[#3D3B3A]/25">
+                                    / 100
+                                </span>
+                            </p>
+                        </div>
+
+                        <span className="rounded-full border border-[#3D3B3A]/10 bg-[#E2A9F1]/25 px-4 py-2 text-xs">
+                            {pair.stage}
+                        </span>
+                    </div>
+
+                    <div className="mb-4 h-3 overflow-hidden rounded-full bg-[#3D3B3A]/10">
+                        <div
+                            className="h-full rounded-full bg-[#3D3B3A] transition-all duration-700"
+                            style={{
+                                width: `${pair.reputation}%`,
+                            }}
+                        />
+                    </div>
+
+                    <div className="flex justify-between text-[10px] uppercase tracking-[0.14em] text-[#3D3B3A]/30">
+                        <span>New</span>
+                        <span>Growing</span>
+                        <span>Established</span>
+                        <span>Graduation</span>
+                    </div>
+                </div>
+
+                {/* Next unlock */}
+                <div className="rounded-[2.5rem] bg-[#3D3B3A] p-8 text-[#F2D8F8]">
+                    <div className="mb-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A]">
+                        <LockKeyhole className="h-5 w-5" />
+                    </div>
+
+                    <p className="mb-3 text-xs uppercase tracking-[0.18em] text-[#F2D8F8]/40">
+                        Next unlock
+                    </p>
+
+                    {nextUnlock ? (
+                        <>
+                            <p className="mb-3 font-serif text-4xl">
+                                Reputation {nextUnlock.reputation}
+                            </p>
+
+                            <p className="text-sm text-[#F2D8F8]/55">
+                                Reaching this level unlocks:
+                            </p>
+
+                            <p className="mt-2 text-xl font-medium">
+                                {nextUnlock.capacity}
+                            </p>
+
+                            <div className="mt-8">
+                                <div className="mb-2 flex justify-between text-xs text-[#F2D8F8]/40">
+                                    <span>Current</span>
+
+                                    <span>
+                                        {pair.reputation} / {nextUnlock.reputation}
+                                    </span>
+                                </div>
+
+                                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                                    <div
+                                        className="h-full rounded-full bg-[#E2A9F1]"
+                                        style={{
+                                            width: `${Math.min(
+                                                (pair.reputation /
+                                                    nextUnlock.reputation) *
+                                                100,
+                                                100
+                                            )}%`,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <p className="mb-3 font-serif text-4xl">
+                                Final stage reached
+                            </p>
+
+                            <p className="text-sm text-[#F2D8F8]/55">
+                                This Pair has enough reputation to satisfy the social side of
+                                graduation.
+                            </p>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* =========================
+          MILESTONES
+      ========================== */}
+            <div className="mb-8 rounded-[2.5rem] border border-[#3D3B3A]/10 p-8">
+                <div className="mb-8 flex items-end justify-between">
+                    <div>
+                        <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#3D3B3A]/35">
+                            Verified history
+                        </p>
+
+                        <h3 className="font-serif text-3xl">
+                            Milestone history
+                        </h3>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-[#3D3B3A]/35">
+                        <Sparkles className="h-4 w-4" />
+
+                        {milestones.filter(
+                            (milestone) =>
+                                milestone.status === "completed"
+                        ).length}{" "}
+                        completed
+                    </div>
+                </div>
+
+                <div className="divide-y divide-[#3D3B3A]/10">
+                    {milestones.map((milestone) => {
+                        const completed =
+                            milestone.status === "completed"
+
+                        return (
+                            <div
+                                key={milestone.id}
+                                className="grid gap-5 py-6 md:grid-cols-[auto_1fr_auto] md:items-center"
+                            >
+                                <div
+                                    className={`flex h-11 w-11 items-center justify-center rounded-full ${completed
+                                            ? "bg-[#3D3B3A] text-[#E2A9F1]"
+                                            : "border border-[#3D3B3A]/10"
+                                        }`}
+                                >
+                                    {completed ? (
+                                        <CheckCircle2 className="h-5 w-5" />
+                                    ) : (
+                                        <Circle className="h-5 w-5" />
+                                    )}
+                                </div>
+
+                                <div>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <p className="font-medium">
+                                            {milestone.title}
+                                        </p>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.14em] ${completed
+                                                    ? "bg-[#E2A9F1]/30"
+                                                    : "bg-[#3D3B3A]/5 text-[#3D3B3A]/45"
+                                                }`}
+                                        >
+                                            {completed
+                                                ? "Completed"
+                                                : "Active"}
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-[#3D3B3A]/35">
+                                        Proposed by {milestone.proposer} ·{" "}
+                                        {milestone.date}
+                                    </p>
+                                </div>
+
+                                <div className="text-left md:text-right">
+                                    <p className="text-lg font-medium">
+                                        {completed
+                                            ? `+${milestone.reputation}`
+                                            : `+${milestone.reputation}`}
+                                    </p>
+
+                                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#3D3B3A]/30">
+                                        reputation
+                                    </p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+
+                <p className="mt-5 text-xs leading-relaxed text-[#3D3B3A]/30">
+                    Active milestones only award reputation after both Pair members
+                    complete and mutually attest them.
+                </p>
+            </div>
+
+            {/* =========================
+          GRADUATION
+      ========================== */}
+            <div className="rounded-[2.5rem] border border-[#3D3B3A]/10 p-8 md:p-10">
+                <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-start">
+                    <div>
+                        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#E2A9F1]/40">
+                            <Trophy className="h-5 w-5" />
+                        </div>
+
+                        <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#3D3B3A]/35">
+                            Graduation
+                        </p>
+
+                        <h3 className="font-serif text-4xl">
+                            From controlled market
+                            <br />
+                            to open liquidity.
+                        </h3>
+                    </div>
+
+                    <div
+                        className={`rounded-full px-4 py-2 text-xs font-medium ${graduationEligible
+                                ? "bg-[#3D3B3A] text-[#E2A9F1]"
+                                : "border border-[#3D3B3A]/10 text-[#3D3B3A]/45"
+                            }`}
+                    >
+                        {graduationEligible
+                            ? "Graduation eligible"
+                            : "Not eligible yet"}
+                    </div>
+                </div>
+
+                <div className="grid gap-8 md:grid-cols-2">
+                    {/* Reputation */}
+                    <div>
+                        <div className="mb-3 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium">
+                                    Social proof
+                                </p>
+
+                                <p className="mt-1 text-xs text-[#3D3B3A]/35">
+                                    Pair reputation
+                                </p>
+                            </div>
+
+                            <p className="text-sm">
+                                {pair.reputation} / 70
+                            </p>
+                        </div>
+
+                        <div className="h-2 overflow-hidden rounded-full bg-[#3D3B3A]/10">
+                            <div
+                                className="h-full rounded-full bg-[#3D3B3A]"
+                                style={{
+                                    width: `${reputationGraduationProgress}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Reserve */}
+                    <div>
+                        <div className="mb-3 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium">
+                                    Market proof
+                                </p>
+
+                                <p className="mt-1 text-xs text-[#3D3B3A]/35">
+                                    Bonding curve reserve
+                                </p>
+                            </div>
+
+                            <p className="text-sm">
+                                ${pair.reserve.toLocaleString()} / $10,000
+                            </p>
+                        </div>
+
+                        <div className="h-2 overflow-hidden rounded-full bg-[#3D3B3A]/10">
+                            <div
+                                className="h-full rounded-full bg-[#E2A9F1]"
+                                style={{
+                                    width: `${reserveGraduationProgress}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Requirements */}
+                <div className="mt-10 grid gap-3 border-t border-[#3D3B3A]/10 pt-8 md:grid-cols-3">
+                    <GraduationRequirement
+                        complete
+                        label="Verified Pair"
+                    />
+
+                    <GraduationRequirement
+                        complete={pair.reputation >= 70}
+                        label="Reputation ≥ 70"
+                    />
+
+                    <GraduationRequirement
+                        complete={pair.reserve >= 10000}
+                        label="Reserve ≥ $10,000"
+                    />
+                </div>
+
+                <p className="mt-8 max-w-3xl text-xs leading-relaxed text-[#3D3B3A]/30">
+                    Graduation requires both social proof and market proof. Reputation
+                    alone cannot graduate a Pair, and market demand alone cannot bypass
+                    the reputation requirement.
+                </p>
+            </div>
+        </section>
+    )
+}
+
+function GraduationRequirement({
+    complete,
+    label,
+}: {
+    complete: boolean
+    label: string
+}) {
+    return (
+        <div className="flex items-center gap-3 rounded-2xl bg-[#3D3B3A]/[0.035] p-4">
+            <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full ${complete
+                        ? "bg-[#3D3B3A] text-[#E2A9F1]"
+                        : "border border-[#3D3B3A]/15 text-[#3D3B3A]/25"
+                    }`}
+            >
+                {complete ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                    <Circle className="h-4 w-4" />
+                )}
+            </div>
+
+            <span className="text-sm">
+                {label}
             </span>
         </div>
     )
