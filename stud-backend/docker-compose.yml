@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: stud-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: stud
+      POSTGRES_PASSWORD: stud
+      POSTGRES_DB: stud
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - stud-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  stud-postgres-data:
