@@ -7,6 +7,8 @@ import {
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { WorldIdModule } from './world-id/world-id.module.js';
+import { PairModule } from './pair/pair.module.js';
+
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { WorldIdModule } from './world-id/world-id.module.js';
     }),
 
     WorldIdModule,
+
+    PairModule,
   ],
 })
 export class AppModule { }

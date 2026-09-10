@@ -4,134 +4,259 @@ pragma solidity ^0.8.28;
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "openzeppelin-contracts/contracts/utils/cryptography/EIP712.sol";
 
-interface IStudRegistry {
-    function isVerifiedStud(address wallet) external view returns (bool);
-}
-
-contract PairRegistry is EIP712 {
+contract StudRegistry is EIP712 {
     using ECDSA for bytes32;
 
-    error InvalidStudRegistry();
-    error InvalidPairSigner();
+    /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Wallet is already registered as a Stud.
+    error AlreadyRegistered();
+
+    /// @notice This World ID nullifier has already been used.
+    error NullifierAlreadyUsed();
+
+    /// @notice EIP-712 authorization was not signed by verifierSigner.
     error InvalidAuthorization();
+
+    /// @notice Backend authorization has expired.
     error AuthorizationExpired();
 
-    error SameMember();
-    error UnverifiedStud();
-    error PairAlreadyExists();
-    error UnauthorizedCaller();
+    /// @notice Zero-value nullifier is not allowed.
+    error InvalidNullifier();
 
-    struct Pair {
+    /// @notice Verifier signer cannot be the zero address.
+    error InvalidVerifierSigner();
+
+    /*//////////////////////////////////////////////////////////////
+                                STRUCTS
+    //////////////////////////////////////////////////////////////*/
+
+    struct Stud {
         uint256 id;
-        address memberA;
-        address memberB;
-        uint256 reputation;
-        uint64 createdAt;
-        bool active;
+        address wallet;
+        bool verified;
+        uint64 registeredAt;
     }
 
-    bytes32 private constant CREATE_PAIR_TYPEHASH =
-        keccak256("CreatePair(address memberA,address memberB,uint256 deadline)");
+    /*//////////////////////////////////////////////////////////////
+                               CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
-    IStudRegistry public immutable studRegistry;
+    /**
+     * Backend signs:
+     *
+     * RegisterStud(
+     *   wallet,
+     *   nullifierHash,
+     *   deadline
+     * )
+     *
+     * This must exactly match the EIP-712 structure used
+     * by the NestJS authorization signer.
+     */
+    bytes32 private constant REGISTER_STUD_TYPEHASH =
+        keccak256("RegisterStud(address wallet,bytes32 nullifierHash,uint256 deadline)");
 
-    address public immutable pairSigner;
+    /*//////////////////////////////////////////////////////////////
+                                STATE
+    //////////////////////////////////////////////////////////////*/
 
-    uint256 public nextPairId = 1;
+    /**
+     * @notice Trusted signer controlled by the Stud backend.
+     *
+     * NestJS only signs an authorization after World ID
+     * verification succeeds.
+     */
+    address public immutable verifierSigner;
 
-    mapping(uint256 => Pair) private pairs;
+    /**
+     * @notice ID assigned to the next registered Stud.
+     *
+     * Stud IDs begin at 1.
+     * ID 0 therefore represents "not registered".
+     */
+    uint256 public nextStudId = 1;
 
-    mapping(bytes32 => uint256) private pairIds;
+    /**
+     * wallet => Stud
+     */
+    mapping(address => Stud) private studs;
 
-    event PairCreated(uint256 indexed pairId, address indexed memberA, address indexed memberB, uint64 createdAt);
+    /**
+     * World ID nullifier => consumed?
+     *
+     * Prevents a verified World identity from registering
+     * more than once.
+     */
+    mapping(bytes32 => bool) private usedNullifiers;
 
-    constructor(address _studRegistry, address _pairSigner) EIP712("PairRegistry", "1") {
-        if (_studRegistry == address(0)) {
-            revert InvalidStudRegistry();
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event StudRegistered(
+        uint256 indexed studId, address indexed wallet, bytes32 indexed nullifierHash, uint64 registeredAt
+    );
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @param _verifierSigner Address corresponding to the private
+     * key used by NestJS to sign registration authorizations.
+     */
+    constructor(address _verifierSigner) EIP712("StudRegistry", "1") {
+        if (_verifierSigner == address(0)) {
+            revert InvalidVerifierSigner();
         }
 
-        if (_pairSigner == address(0)) {
-            revert InvalidPairSigner();
-        }
-
-        studRegistry = IStudRegistry(_studRegistry);
-
-        pairSigner = _pairSigner;
+        verifierSigner = _verifierSigner;
     }
 
-    function createPair(address otherMember, uint256 deadline, bytes calldata signature)
+    /*//////////////////////////////////////////////////////////////
+                            REGISTRATION
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Register msg.sender as a verified Stud.
+     *
+     * Flow:
+     *
+     * World ID
+     *     ↓
+     * NestJS verifies proof
+     *     ↓
+     * NestJS signs EIP-712 authorization
+     *     ↓
+     * User calls registerStud()
+     *
+     * @param nullifierHash World ID nullifier returned after
+     * successful verification.
+     *
+     * @param deadline Timestamp after which the backend
+     * authorization becomes invalid.
+     *
+     * @param signature EIP-712 signature produced by verifierSigner.
+     *
+     * @return studId Newly-created Stud ID.
+     */
+    function registerStud(bytes32 nullifierHash, uint256 deadline, bytes calldata signature)
         external
-        returns (uint256 pairId)
+        returns (uint256 studId)
     {
-        if (msg.sender == otherMember) {
-            revert SameMember();
+        /*//////////////////////////////////////////////////////////
+                            WALLET CHECK
+        //////////////////////////////////////////////////////////*/
+
+        if (studs[msg.sender].verified) {
+            revert AlreadyRegistered();
         }
 
-        if (!studRegistry.isVerifiedStud(msg.sender) || !studRegistry.isVerifiedStud(otherMember)) {
-            revert UnverifiedStud();
+        /*//////////////////////////////////////////////////////////
+                           NULLIFIER CHECKS
+        //////////////////////////////////////////////////////////*/
+
+        if (nullifierHash == bytes32(0)) {
+            revert InvalidNullifier();
         }
+
+        if (usedNullifiers[nullifierHash]) {
+            revert NullifierAlreadyUsed();
+        }
+
+        /*//////////////////////////////////////////////////////////
+                         AUTHORIZATION EXPIRY
+        //////////////////////////////////////////////////////////*/
 
         if (block.timestamp > deadline) {
             revert AuthorizationExpired();
         }
 
-        (address memberA, address memberB) = _sortMembers(msg.sender, otherMember);
+        /*//////////////////////////////////////////////////////////
+                        VERIFY EIP-712 SIGNATURE
+        //////////////////////////////////////////////////////////*/
 
-        bytes32 key = pairKey(memberA, memberB);
-
-        if (pairIds[key] != 0) {
-            revert PairAlreadyExists();
-        }
-
-        bytes32 digest = creationDigest(memberA, memberB, deadline);
+        bytes32 digest = registrationDigest(msg.sender, nullifierHash, deadline);
 
         address recoveredSigner = digest.recover(signature);
 
-        if (recoveredSigner != pairSigner) {
+        if (recoveredSigner != verifierSigner) {
             revert InvalidAuthorization();
         }
 
-        pairId = nextPairId++;
+        /*//////////////////////////////////////////////////////////
+                          CONSUME NULLIFIER
+        //////////////////////////////////////////////////////////*/
 
-        uint64 createdAt = uint64(block.timestamp);
+        usedNullifiers[nullifierHash] = true;
 
-        pairs[pairId] =
-            Pair({id: pairId, memberA: memberA, memberB: memberB, reputation: 0, createdAt: createdAt, active: true});
+        /*//////////////////////////////////////////////////////////
+                           CREATE STUD
+        //////////////////////////////////////////////////////////*/
 
-        pairIds[key] = pairId;
+        studId = nextStudId++;
 
-        emit PairCreated(pairId, memberA, memberB, createdAt);
+        uint64 registeredAt = uint64(block.timestamp);
+
+        studs[msg.sender] = Stud({id: studId, wallet: msg.sender, verified: true, registeredAt: registeredAt});
+
+        /*//////////////////////////////////////////////////////////
+                              EVENT
+        //////////////////////////////////////////////////////////*/
+
+        emit StudRegistered(studId, msg.sender, nullifierHash, registeredAt);
     }
 
-    function creationDigest(address memberA, address memberB, uint256 deadline) public view returns (bytes32) {
-        (address first, address second) = _sortMembers(memberA, memberB);
+    /*//////////////////////////////////////////////////////////////
+                           EIP-712 HELPERS
+    //////////////////////////////////////////////////////////////*/
 
-        bytes32 structHash = keccak256(abi.encode(CREATE_PAIR_TYPEHASH, first, second, deadline));
+    /**
+     * @notice Returns the exact EIP-712 digest NestJS must sign.
+     */
+    function registrationDigest(address wallet, bytes32 nullifierHash, uint256 deadline) public view returns (bytes32) {
+        bytes32 structHash = keccak256(abi.encode(REGISTER_STUD_TYPEHASH, wallet, nullifierHash, deadline));
 
         return _hashTypedDataV4(structHash);
     }
 
-    function getPair(uint256 pairId) external view returns (Pair memory) {
-        return pairs[pairId];
+    /*//////////////////////////////////////////////////////////////
+                                VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Check whether a wallet is a verified Stud.
+     *
+     * PairRegistry will use this.
+     */
+    function isVerifiedStud(address wallet) external view returns (bool) {
+        return studs[wallet].verified;
     }
 
-    function getPairId(address memberA, address memberB) external view returns (uint256) {
-        bytes32 key = pairKey(memberA, memberB);
-
-        return pairIds[key];
+    /**
+     * @notice Return complete Stud information for a wallet.
+     */
+    function getStud(address wallet) external view returns (Stud memory) {
+        return studs[wallet];
     }
 
-    function pairKey(address memberA, address memberB) public pure returns (bytes32) {
-        (address first, address second) = _sortMembers(memberA, memberB);
-
-        return keccak256(abi.encode(first, second));
+    /**
+     * @notice Return the Stud ID belonging to a wallet.
+     *
+     * Returns 0 for an unregistered wallet.
+     */
+    function getStudId(address wallet) external view returns (uint256) {
+        return studs[wallet].id;
     }
 
-    function _sortMembers(address memberA, address memberB) internal pure returns (address first, address second) {
-        if (memberA < memberB) {
-            return (memberA, memberB);
-        }
-
-        return (memberB, memberA);
+    /**
+     * @notice Check whether a World ID nullifier has already
+     * been consumed onchain.
+     */
+    function isNullifierUsed(bytes32 nullifierHash) external view returns (bool) {
+        return usedNullifiers[nullifierHash];
     }
 }
