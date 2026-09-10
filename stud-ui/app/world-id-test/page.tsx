@@ -18,7 +18,7 @@ const RP_ID =
     process.env.NEXT_PUBLIC_WORLD_RP_ID!
 
 const ALICE_WALLET =
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
 
 type AuthorizationResult = {
     success: boolean
