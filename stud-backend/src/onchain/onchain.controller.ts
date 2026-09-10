@@ -233,18 +233,110 @@ export class OnchainController {
         };
     }
 
-    @Get(
-        'stud/:studId/prediction-markets',
-    )
+    @Get('stud/:studId/prediction-markets')
     async getPredictionMarketsForStud(
         @Param('studId')
         studId: string,
     ) {
-        const markets =
+        const addresses =
             await this.onchain
                 .getPredictionMarketsForStud(
                     BigInt(studId),
                 );
+
+        const markets =
+            await Promise.all(
+                addresses.map(
+                    async (address) => {
+                        const market =
+                            await this.onchain
+                                .getPredictionMarketDetails(
+                                    address,
+                                );
+
+                        const outcomeNames = [
+                            'unresolved',
+                            'yes',
+                            'no',
+                        ];
+
+                        return {
+                            address:
+                                market.address,
+
+                            subject:
+                                market.subject,
+
+                            studId:
+                                market.studId.toString(),
+
+                            question:
+                                market.question,
+
+                            closesAt:
+                                market.closesAt.toString(),
+
+                            resolver:
+                                market.resolver,
+
+                            quoteToken:
+                                market.quoteToken,
+
+                            outcome: {
+                                value:
+                                    Number(
+                                        market.outcome,
+                                    ),
+
+                                label:
+                                    outcomeNames[
+                                    Number(
+                                        market.outcome,
+                                    )
+                                    ],
+                            },
+
+                            pools: {
+                                yes:
+                                    market.yesPool
+                                        .toString(),
+
+                                no:
+                                    market.noPool
+                                        .toString(),
+
+                                total:
+                                    market.totalPool
+                                        .toString(),
+                            },
+
+                            probabilities: {
+                                yesBps:
+                                    market
+                                        .yesProbabilityBps
+                                        .toString(),
+
+                                noBps:
+                                    market
+                                        .noProbabilityBps
+                                        .toString(),
+
+                                yesPercent:
+                                    Number(
+                                        market
+                                            .yesProbabilityBps,
+                                    ) / 100,
+
+                                noPercent:
+                                    Number(
+                                        market
+                                            .noProbabilityBps,
+                                    ) / 100,
+                            },
+                        };
+                    },
+                ),
+            );
 
         return {
             studId,

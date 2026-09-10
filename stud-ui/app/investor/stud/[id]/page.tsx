@@ -1,6 +1,9 @@
 "use client"
-
-import { useMemo, useState } from "react"
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -18,23 +21,41 @@ import {
     X,
 } from "lucide-react"
 
+import {
+    formatUnits,
+    type Address,
+} from "viem"
+
+import {
+    claimPredictionWinnings,
+    placePredictionPosition,
+} from "@/lib/prediction-market"
+
 type Outcome = "YES" | "NO"
 
 type Market = {
-    id: string
+    address: Address
     question: string
-    description: string
-    yes: number
-    no: number
+    yesPercent: number
+    noPercent: number
+    yesPool: number
+    noPool: number
     volume: number
-    traders: number
     ends: string
-    status: "Live" | "Closing soon"
+    status:
+    | "Live"
+    | "Closed"
+    | "Resolved"
+    outcome:
+    | "unresolved"
+    | "yes"
+    | "no"
 }
 
 const studData = {
     alice: {
         id: "alice",
+        onchainStudId: 1,
         name: "Alice",
         age: 24,
         occupation: "Designer",
@@ -43,48 +64,11 @@ const studData = {
         verified: true,
         joined: "September 2026",
         matches: 2,
-        markets: [
-            {
-                id: "alice-match-week",
-                question: "Will Alice receive a verified mutual match this week?",
-                description:
-                    "Resolves YES if Alice receives at least one new mutual match with another World ID–verified Stud before the deadline.",
-                yes: 0.62,
-                no: 0.38,
-                volume: 1840,
-                traders: 46,
-                ends: "Sep 13, 2026",
-                status: "Live" as const,
-            },
-            {
-                id: "alice-pair-month",
-                question: "Will Alice form a new Pair before September 30?",
-                description:
-                    "Resolves YES if a mutual match involving Alice creates a valid onchain Pair before September 30.",
-                yes: 0.44,
-                no: 0.56,
-                volume: 1120,
-                traders: 31,
-                ends: "Sep 30, 2026",
-                status: "Live" as const,
-            },
-            {
-                id: "alice-three-matches",
-                question: "Will Alice reach 3 verified matches this month?",
-                description:
-                    "Resolves YES when Alice's protocol profile records at least three verified mutual matches during September.",
-                yes: 0.71,
-                no: 0.29,
-                volume: 760,
-                traders: 22,
-                ends: "Sep 30, 2026",
-                status: "Closing soon" as const,
-            },
-        ] satisfies Market[],
     },
 
     Kai: {
         id: "Kai",
+        onchainStudId: null,
         name: "Kai",
         age: 26,
         occupation: "Creative Director",
@@ -98,6 +82,7 @@ const studData = {
 
     noah: {
         id: "noah",
+        onchainStudId: null,
         name: "Noah",
         age: 25,
         occupation: "Product Designer",
@@ -111,6 +96,7 @@ const studData = {
 
     leo: {
         id: "leo",
+        onchainStudId: null,
         name: "Leo",
         age: 27,
         occupation: "Founder",
@@ -138,7 +124,190 @@ export default function StudMarketPage() {
 
     const [amount, setAmount] = useState("25")
 
-    const totalVolume = stud.markets.reduce(
+    const [markets, setMarkets] =
+        useState<Market[]>([])
+
+    const [loadingMarkets, setLoadingMarkets] =
+        useState(true)
+
+    const [txMessage, setTxMessage] =
+        useState("")
+
+    const [submitting, setSubmitting] =
+        useState(false)
+
+    async function handleTrade(
+        market: Market,
+        outcome: Outcome,
+        amount: string
+    ) {
+        try {
+            setSubmitting(true)
+            setTxMessage(
+                "Waiting for wallet..."
+            )
+
+            await placePredictionPosition(
+                market.address,
+                amount,
+                outcome
+            )
+
+            setTxMessage(
+                `${outcome} position confirmed onchain.`
+            )
+
+            await loadMarkets()
+
+            setSelectedMarket(null)
+        } catch (error) {
+            setTxMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Transaction failed."
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const backendUrl =
+        process.env
+            .NEXT_PUBLIC_BACKEND_URL ??
+        "http://localhost:3001"
+
+    async function loadMarkets() {
+        if (!stud.onchainStudId) {
+            setMarkets([])
+            setLoadingMarkets(false)
+            return
+        }
+
+        setLoadingMarkets(true)
+
+        try {
+            const response =
+                await fetch(
+                    `${backendUrl}/onchain/stud/${stud.onchainStudId}/prediction-markets`,
+                    {
+                        cache: "no-store",
+                    }
+                )
+
+            if (!response.ok) {
+                throw new Error(
+                    "Could not load markets."
+                )
+            }
+
+            const data =
+                await response.json()
+
+            const parsed: Market[] =
+                data.markets.map(
+                    (market: any) => {
+                        const closesAt =
+                            Number(
+                                market.closesAt
+                            )
+
+                        const isResolved =
+                            market.outcome.label !==
+                            "unresolved"
+
+                        const isClosed =
+                            closesAt <=
+                            Math.floor(
+                                Date.now() /
+                                1000
+                            )
+
+                        return {
+                            address:
+                                market.address,
+
+                            question:
+                                market.question,
+
+                            yesPercent:
+                                market
+                                    .probabilities
+                                    .yesPercent,
+
+                            noPercent:
+                                market
+                                    .probabilities
+                                    .noPercent,
+
+                            yesPool:
+                                Number(
+                                    formatUnits(
+                                        BigInt(
+                                            market
+                                                .pools
+                                                .yes
+                                        ),
+                                        6
+                                    )
+                                ),
+
+                            noPool:
+                                Number(
+                                    formatUnits(
+                                        BigInt(
+                                            market
+                                                .pools
+                                                .no
+                                        ),
+                                        6
+                                    )
+                                ),
+
+                            volume:
+                                Number(
+                                    formatUnits(
+                                        BigInt(
+                                            market
+                                                .pools
+                                                .total
+                                        ),
+                                        6
+                                    )
+                                ),
+
+                            ends:
+                                new Date(
+                                    closesAt *
+                                    1000
+                                ).toLocaleString(),
+
+                            status:
+                                isResolved
+                                    ? "Resolved"
+                                    : isClosed
+                                        ? "Closed"
+                                        : "Live",
+
+                            outcome:
+                                market.outcome
+                                    .label,
+                        }
+                    }
+                )
+
+            setMarkets(
+                parsed.reverse()
+            )
+        } finally {
+            setLoadingMarkets(false)
+        }
+    }
+
+    useEffect(() => {
+        void loadMarkets()
+    }, [stud.onchainStudId])
+
+    const totalVolume = markets.reduce(
         (total, market) => total + market.volume,
         0
     )
@@ -227,7 +396,7 @@ export default function StudMarketPage() {
                         <div className="mt-10 grid gap-4 sm:grid-cols-3">
                             <ProfileMetric
                                 label="Active Markets"
-                                value={String(stud.markets.length)}
+                                value={String(markets.length)}
                             />
 
                             <ProfileMetric
@@ -282,13 +451,13 @@ export default function StudMarketPage() {
                     </div>
 
                     <p className="text-xs text-[#3D3B3A]/35">
-                        {stud.markets.length} markets
+                        {markets.length} markets
                     </p>
                 </div>
 
                 {/* MARKETS */}
                 <div className="space-y-4">
-                    {stud.markets.map((market, index) => (
+                    {markets.map((market, index) => (
                         <MarketRow
                             key={market.id}
                             market={market}
@@ -300,7 +469,7 @@ export default function StudMarketPage() {
                         />
                     ))}
 
-                    {stud.markets.length === 0 && (
+                    {markets.length === 0 && (
                         <div className="rounded-[2rem] border border-[#3D3B3A]/10 py-20 text-center">
                             <p className="font-serif text-3xl">
                                 No active markets yet.
@@ -332,7 +501,11 @@ export default function StudMarketPage() {
                         amount={amount}
                         setAmount={setAmount}
                         setOutcome={setSelectedOutcome}
-                        onClose={() => setSelectedMarket(null)}
+                        onClose={() =>
+                            setSelectedMarket(null)
+                        }
+                        onTrade={handleTrade}
+                        loading={submitting}
                     />
                 )}
             </AnimatePresence>
@@ -367,7 +540,13 @@ function MarketRow({
 }: {
     market: Market
     index: number
-    onTrade: (outcome: Outcome) => void
+    onTrade: (
+        market: Market,
+        outcome: Outcome,
+        amount: string
+    ) => Promise<void>
+
+    loading: boolean
 }) {
     return (
         <motion.div
@@ -399,36 +578,32 @@ function MarketRow({
                         {market.description}
                     </p>
 
-                    <div className="mt-5 flex gap-6 text-xs text-[#3D3B3A]/35">
-                        <span className="flex items-center gap-1.5">
-                            <BarChart3 className="h-3.5 w-3.5" />
-                            ${market.volume.toLocaleString()} volume
-                        </span>
 
-                        <span className="flex items-center gap-1.5">
-                            <Users className="h-3.5 w-3.5" />
-                            {market.traders} traders
-                        </span>
-                    </div>
                 </div>
 
                 {/* PRICES */}
                 <div className="grid min-w-[270px] grid-cols-2 gap-3">
                     <button
-                        onClick={() => onTrade("YES")}
-                        className="group rounded-2xl bg-[#E2A9F1]/40 p-5 text-left transition hover:bg-[#E2A9F1]"
+                        disabled={
+                            loading ||
+                            numericAmount <= 0
+                        }
+                        onClick={() =>
+                            void onTrade(
+                                market,
+                                outcome,
+                                amount
+                            )
+                        }
+                        className="flex w-full items-center justify-between rounded-full bg-[#3D3B3A] py-2 pl-6 pr-2 text-sm font-medium text-[#E2A9F1] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <p className="text-xs text-[#3D3B3A]/40">
-                            YES
-                        </p>
+                        {loading
+                            ? "Confirming..."
+                            : `Stake $${numericAmount.toFixed(2)} on ${outcome}`}
 
-                        <div className="mt-2 flex items-center justify-between">
-                            <p className="text-2xl font-medium">
-                                ${market.yes.toFixed(2)}
-                            </p>
-
-                            <ArrowUpRight className="h-4 w-4 opacity-30 transition group-hover:opacity-100" />
-                        </div>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A]">
+                            <ArrowUpRight className="h-4 w-4" />
+                        </span>
                     </button>
 
                     <button
@@ -441,7 +616,7 @@ function MarketRow({
 
                         <div className="mt-2 flex items-center justify-between">
                             <p className="text-2xl font-medium">
-                                ${market.no.toFixed(2)}
+                                {market.noPercent.toFixed(0)}%
                             </p>
 
                             <ArrowUpRight className="h-4 w-4 opacity-30 transition group-hover:opacity-100" />
@@ -470,21 +645,15 @@ function TradePanel({
 }) {
     const numericAmount = Number(amount) || 0
 
-    const price =
+    const probability =
         outcome === "YES"
-            ? market.yes
-            : market.no
+            ? market.yesPercent
+            : market.noPercent
 
-    const shares = useMemo(() => {
-        if (!price || !numericAmount) return 0
-
-        return numericAmount / price
-    }, [numericAmount, price])
-
-    const potentialPayout = shares
-
-    const potentialProfit =
-        potentialPayout - numericAmount
+    const outcomePool =
+        outcome === "YES"
+            ? market.yesPool
+            : market.noPool
 
     return (
         <>
@@ -603,29 +772,27 @@ function TradePanel({
                 {/* CALCULATION */}
                 <div className="mb-8 rounded-3xl bg-[#3D3B3A]/5 p-5">
                     <TradeStat
-                        label="Current price"
-                        value={`$${price.toFixed(2)}`}
+                        label="Current probability"
+                        value={`${probability.toFixed(0)}%`}
                     />
 
                     <TradeStat
-                        label="Estimated shares"
-                        value={shares.toFixed(2)}
+                        label={`${outcome} pool`}
+                        value={`$${outcomePool.toLocaleString()}`}
                     />
 
                     <TradeStat
-                        label="Winning payout"
-                        value={`$${potentialPayout.toFixed(2)}`}
+                        label="Your stake"
+                        value={`$${numericAmount.toFixed(2)}`}
                     />
 
                     <div className="mt-4 border-t border-[#3D3B3A]/10 pt-4">
-                        <TradeStat
-                            label="Potential gross profit"
-                            value={`$${Math.max(
-                                potentialProfit,
-                                0
-                            ).toFixed(2)}`}
-                            strong
-                        />
+                        <p className="text-xs leading-relaxed text-[#3D3B3A]/40">
+                            If {outcome} wins, your payout is calculated
+                            proportionally from the final total pool.
+                            The exact payout can change as more positions
+                            are added before closing.
+                        </p>
                     </div>
                 </div>
 
@@ -644,9 +811,10 @@ function TradePanel({
                     <Clock className="mt-0.5 h-4 w-4 shrink-0" />
 
                     <p>
-                        Winning shares redeem for 1 USDC when the market resolves.
-                        Losing shares redeem for 0. Prices and calculations shown here
-                        are illustrative for the hackathon demo.
+                        Your USDC is deposited directly into the
+                        onchain {outcome} pool. If that outcome
+                        resolves as the winner, you can claim your
+                        proportional share of the final market pool.
                     </p>
                 </div>
             </motion.aside>
