@@ -17,28 +17,76 @@ import {
 
 import { useEffect, useState } from "react"
 
+import {
+    WalletButton,
+} from "@/components/wallet-button"
+
+import {
+    formatUnits,
+    type Address,
+
+} from "viem"
+
+import {
+    useWallet,
+} from "@/components/wallet-provider"
+
+import {
+    buyPairTokens,
+    getPairMarketQuote,
+    getPairTokenBalance,
+    sellPairTokens,
+} from "@/lib/pair-market"
+
+
+
 type Proposal = {
-  id: number
-  title: string
-  description: string
-  proposer: string
-  reward: string | null
-  reputation: number
-  deadline: string
-  status: string
-  acceptedByA: boolean
-  acceptedByB: boolean
+    id: number
+    title: string
+    description: string
+    proposer: string
+    reward: string | null
+    reputation: number
+    deadline: string
+    status: string
+    acceptedByA: boolean
+    acceptedByB: boolean
 }
 
 type ActiveMilestone = {
-  id: number
-  title: string
-  description: string
-  reputation: number
-  reward: string | null
-  deadline: string
-  attestedByA: boolean
-  attestedByB: boolean
+    id: number
+    title: string
+    description: string
+    reputation: number
+    reward: string | null
+    deadline: string
+    attestedByA: boolean
+    attestedByB: boolean
+}
+
+type OnchainPair = {
+    id: string
+    memberA: string
+    memberB: string
+    reputation: string
+    createdAt: string
+    active: boolean
+
+    market: {
+        address: string
+        pairToken: string
+        quoteToken: string
+
+        reserve: string
+        currentPrice: string
+        totalSupply: string
+        marketCapacity: string
+
+        graduationEligible: boolean
+
+        basePrice: string
+        slope: string
+    } | null
 }
 
 const pairData = {
@@ -218,23 +266,140 @@ const pairData = {
 export default function PairDashboardPage() {
     const router = useRouter()
 
+    const {
+        address:
+        walletAddress,
+    } =
+        useWallet()
+
     const params = useParams<{
         id: string
     }>()
 
     const pair =
-        pairData[
-        params.id as keyof typeof pairData
-        ] ?? pairData["alice-leo"]
+        params.id === "1"
+            ? pairData["alice-leo"]
+            : params.id === "2"
+                ? pairData["alice-noah"]
+                : pairData["alice-leo"]
 
-   const [proposals, setProposals] = useState<Proposal[]>(
-  pair.proposals
-)
+    const pairId =
+        params.id
 
-const [activeMilestones, setActiveMilestones] =
-  useState<ActiveMilestone[]>(
-    pair.activeMilestones
-  )
+    const backendUrl =
+        process.env
+            .NEXT_PUBLIC_BACKEND_URL ??
+        "http://localhost:3001"
+
+    const [
+        onchainPair,
+        setOnchainPair,
+    ] = useState<OnchainPair | null>(
+        null
+    )
+
+    const [
+        loadingPair,
+        setLoadingPair,
+    ] = useState(true)
+
+    const [
+        pairError,
+        setPairError,
+    ] = useState("")
+
+    const [
+        tokenAmount,
+        setTokenAmount,
+    ] = useState("1")
+
+    const [
+        marketMode,
+        setMarketMode,
+    ] =
+        useState<"buy" | "sell">(
+            "buy"
+        )
+
+    const [
+        quotedUsdc,
+        setQuotedUsdc,
+    ] =
+        useState<number | null>(
+            null
+        )
+
+    const [
+        pairTokenBalance,
+        setPairTokenBalance,
+    ] =
+        useState(0)
+
+    const [
+        tradingMarket,
+        setTradingMarket,
+    ] =
+        useState(false)
+
+    const [
+        marketMessage,
+        setMarketMessage,
+    ] =
+        useState("")
+
+
+    async function loadPair() {
+        try {
+            setLoadingPair(true)
+            setPairError("")
+
+            const response =
+                await fetch(
+                    `${backendUrl}/onchain/pair/${pairId}`,
+                    {
+                        cache:
+                            "no-store",
+                    }
+                )
+
+            if (!response.ok) {
+                throw new Error(
+                    "Could not load Pair."
+                )
+            }
+
+            const data:
+                OnchainPair =
+                await response.json()
+
+            setOnchainPair(
+                data
+            )
+        } catch (error) {
+            console.error(
+                error
+            )
+
+            setPairError(
+                error instanceof Error
+                    ? error.message
+                    : "Could not load Pair."
+            )
+        } finally {
+            setLoadingPair(
+                false
+            )
+        }
+    }
+
+    const [proposals, setProposals] = useState<Proposal[]>(
+        pair.proposals
+    )
+
+    const [activeMilestones, setActiveMilestones] =
+        useState<ActiveMilestone[]>(
+            pair.activeMilestones
+        )
 
 
 
@@ -242,6 +407,124 @@ const [activeMilestones, setActiveMilestones] =
         setProposals(pair.proposals)
         setActiveMilestones(pair.activeMilestones)
     }, [pair.id])
+
+    useEffect(() => {
+        void loadPair()
+    }, [pairId])
+
+    useEffect(() => {
+        async function refreshMarketUserState() {
+            if (
+                !walletAddress ||
+                !onchainPair?.market
+            ) {
+                setPairTokenBalance(
+                    0
+                )
+
+                return
+            }
+
+            try {
+                const balance =
+                    await getPairTokenBalance(
+                        onchainPair
+                            .market
+                            .pairToken as Address,
+
+                        walletAddress
+                    )
+
+                setPairTokenBalance(
+                    balance
+                )
+            } catch (
+            error
+            ) {
+                console.error(
+                    error
+                )
+            }
+        }
+
+        void refreshMarketUserState()
+    }, [
+        walletAddress,
+        onchainPair?.market?.pairToken,
+    ])
+
+    useEffect(() => {
+        async function updateQuote() {
+            if (
+                !onchainPair?.market ||
+                !tokenAmount ||
+                Number(tokenAmount) <= 0
+            ) {
+                setQuotedUsdc(
+                    null
+                )
+
+                return
+            }
+
+            if (
+                !Number.isInteger(
+                    Number(tokenAmount)
+                )
+            ) {
+                setQuotedUsdc(
+                    null
+                )
+
+                return
+            }
+
+            try {
+                if (
+                    marketMode === "sell" &&
+                    Number(tokenAmount) >
+                    pairTokenBalance
+                ) {
+                    setQuotedUsdc(
+                        null
+                    )
+
+                    return
+                }
+
+                const quote =
+                    await getPairMarketQuote(
+                        onchainPair
+                            .market
+                            .address as Address,
+
+                        tokenAmount,
+
+                        marketMode
+                    )
+
+                setQuotedUsdc(
+                    quote.formatted
+                )
+            } catch (error) {
+                console.error(
+                    "Pair market quote failed:",
+                    error
+                )
+
+                setQuotedUsdc(
+                    null
+                )
+            }
+        }
+
+        void updateQuote()
+    }, [
+        tokenAmount,
+        marketMode,
+        pairTokenBalance,
+        onchainPair?.market?.address,
+    ])
 
     const handleAcceptProposal = (proposalId: number) => {
         const proposal = proposals.find(
@@ -300,6 +583,190 @@ const [activeMilestones, setActiveMilestones] =
         )
     }
 
+    const reputation =
+        onchainPair
+            ? Number(
+                onchainPair.reputation
+            )
+            : pair.reputation
+
+    const capacity =
+        onchainPair?.market
+            ? Number(
+                formatUnits(
+                    BigInt(
+                        onchainPair
+                            .market
+                            .marketCapacity
+                    ),
+                    6
+                )
+            )
+            : 0
+
+    const reserve =
+        onchainPair?.market
+            ? Number(
+                formatUnits(
+                    BigInt(
+                        onchainPair
+                            .market
+                            .reserve
+                    ),
+                    6
+                )
+            )
+            : 0
+
+    const currentPrice =
+        onchainPair?.market
+            ? Number(
+                formatUnits(
+                    BigInt(
+                        onchainPair
+                            .market
+                            .currentPrice
+                    ),
+                    6
+                )
+            )
+            : 0
+
+    const completedMilestones =
+        Math.floor(
+            reputation / 10
+        )
+
+    const stage =
+        reputation === 0
+            ? "New Pair"
+            : reputation < 20
+                ? "Building Pair"
+                : reputation < 50
+                    ? "Growing Pair"
+                    : "Established Pair"
+
+    const marketActive =
+        Boolean(
+            onchainPair?.market
+        )
+
+
+
+
+    async function handlePairTrade() {
+        if (
+            !walletAddress
+        ) {
+            setMarketMessage(
+                "Connect your wallet first."
+            )
+
+            return
+        }
+
+        if (
+            !onchainPair?.market
+        ) {
+            setMarketMessage(
+                "Pair Market is not active."
+            )
+
+            return
+        }
+
+        try {
+            setTradingMarket(
+                true
+            )
+
+            setMarketMessage(
+                marketMode ===
+                    "buy"
+                    ? "Waiting for Pair Token purchase confirmation..."
+                    : "Waiting for Pair Token sale confirmation..."
+            )
+
+            if (
+                marketMode ===
+                "buy"
+            ) {
+                await buyPairTokens(
+                    onchainPair
+                        .market
+                        .address as Address,
+
+                    onchainPair
+                        .market
+                        .quoteToken as Address,
+
+                    tokenAmount
+                )
+
+                setMarketMessage(
+                    `Bought ${tokenAmount} ${pair.token.replace(
+                        "$",
+                        ""
+                    )} token${tokenAmount === "1"
+                        ? ""
+                        : "s"
+                    }.`
+                )
+            } else {
+                await sellPairTokens(
+                    onchainPair
+                        .market
+                        .address as Address,
+
+                    onchainPair
+                        .market
+                        .pairToken as Address,
+
+                    tokenAmount
+                )
+
+                setMarketMessage(
+                    `Sold ${tokenAmount} ${pair.token.replace(
+                        "$",
+                        ""
+                    )} token${tokenAmount === "1"
+                        ? ""
+                        : "s"
+                    }.`
+                )
+            }
+
+            await loadPair()
+
+            const balance =
+                await getPairTokenBalance(
+                    onchainPair
+                        .market
+                        .pairToken as Address,
+
+                    walletAddress
+                )
+
+            setPairTokenBalance(
+                balance
+            )
+        } catch (error) {
+            console.error(
+                error
+            )
+
+            setMarketMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Pair Market transaction failed."
+            )
+        } finally {
+            setTradingMarket(
+                false
+            )
+        }
+    }
+
     return (
         <main className="min-h-screen bg-background text-[#3D3B3A]">
             {/* HEADER */}
@@ -320,9 +787,13 @@ const [activeMilestones, setActiveMilestones] =
                         STUD
                     </button>
 
-                    <div className="flex items-center gap-2 text-xs text-[#3D3B3A]/45">
-                        <HeartHandshake className="h-4 w-4" />
-                        Your Pair
+                    <div className="flex items-center gap-3">
+                        <div className="hidden items-center gap-2 text-xs text-[#3D3B3A]/45 sm:flex">
+                            <HeartHandshake className="h-4 w-4" />
+                            Your Pair
+                        </div>
+
+                        <WalletButton />
                     </div>
                 </div>
             </header>
@@ -377,13 +848,48 @@ const [activeMilestones, setActiveMilestones] =
                         </p>
 
                         <span className="inline-flex rounded-full border border-[#3D3B3A]/10 bg-[#E2A9F1]/25 px-4 py-2 text-xs">
-                            {pair.stage}
+                            {stage}
                         </span>
 
                         <p className="mt-8 max-w-xl text-sm leading-relaxed text-[#3D3B3A]/50">
                             Complete milestones together, build your Pair reputation,
                             and progressively unlock larger economic permissions.
                         </p>
+
+                        {loadingPair && (
+                            <p className="mt-4 text-xs text-[#3D3B3A]/35">
+                                Loading onchain Pair...
+                            </p>
+                        )}
+
+                        {pairError && (
+                            <p className="mt-4 text-xs text-red-500">
+                                {pairError}
+                            </p>
+                        )}
+
+                        {onchainPair && (
+                            <div className="mt-5 space-y-1 text-xs text-[#3D3B3A]/35">
+                                <p>
+                                    Pair #{onchainPair.id}
+                                </p>
+
+                                <p>
+                                    {onchainPair.active
+                                        ? "Active onchain"
+                                        : "Inactive"}
+                                </p>
+
+                                {marketActive && (
+                                    <p>
+                                        Pair token price: $
+                                        {currentPrice.toFixed(
+                                            2
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT */}
@@ -395,7 +901,7 @@ const [activeMilestones, setActiveMilestones] =
                                 </p>
 
                                 <p className="text-6xl font-light">
-                                    {pair.reputation}
+                                    {reputation}
                                     <span className="ml-2 text-xl text-[#3D3B3A]/25">
                                         / 100
                                     </span>
@@ -410,7 +916,10 @@ const [activeMilestones, setActiveMilestones] =
                                 <div
                                     className="h-full rounded-full bg-[#3D3B3A]"
                                     style={{
-                                        width: `${pair.reputation}%`,
+                                        width: `${Math.min(
+                                            reputation,
+                                            100
+                                        )}%`,
                                     }}
                                 />
                             </div>
@@ -419,17 +928,27 @@ const [activeMilestones, setActiveMilestones] =
                         <div className="grid grid-cols-2 gap-3">
                             <Metric
                                 label="Market Capacity"
-                                value={`$${pair.capacity.toLocaleString()}`}
+                                value={
+                                    marketActive
+                                        ? `$${capacity.toLocaleString()}`
+                                        : "Not active"
+                                }
                             />
 
                             <Metric
                                 label="Reserve"
-                                value={`$${pair.reserve.toLocaleString()}`}
+                                value={
+                                    marketActive
+                                        ? `$${reserve.toLocaleString()}`
+                                        : "—"
+                                }
                             />
 
                             <Metric
                                 label="Completed"
-                                value={String(pair.completedMilestones)}
+                                value={String(
+                                    completedMilestones
+                                )}
                             />
 
                             <Metric
@@ -463,7 +982,253 @@ const [activeMilestones, setActiveMilestones] =
                         2 verified humans
                     </div>
                 </div>
+                {/* ======================
+    PAIR MARKET
+======================= */}
 
+                <section className="mb-16">
+
+                    <div className="mb-7">
+                        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-[#3D3B3A]/35">
+                            Pair Market
+                        </p>
+
+                        <h2 className="font-serif text-4xl">
+                            Back the Pair.
+                        </h2>
+
+                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#3D3B3A]/45">
+                            Pair Tokens follow an onchain bonding curve.
+                            Reputation determines how much capital the
+                            market is allowed to hold.
+                        </p>
+                    </div>
+
+                    {marketActive &&
+                        onchainPair?.market ? (
+                        <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
+
+                            {/* MARKET INFO */}
+
+                            <div className="rounded-[2rem] border border-[#3D3B3A]/10 p-7">
+
+                                <div className="mb-8 flex items-start justify-between">
+
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.16em] text-[#3D3B3A]/35">
+                                            Pair Token
+                                        </p>
+
+                                        <p className="mt-2 text-3xl font-medium">
+                                            {pair.token}
+                                        </p>
+                                    </div>
+
+                                    <span className="rounded-full bg-[#E2A9F1]/30 px-3 py-1.5 text-xs">
+                                        Live
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+
+                                    <Metric
+                                        label="Current Price"
+                                        value={`$${currentPrice.toFixed(
+                                            2
+                                        )}`}
+                                    />
+
+                                    <Metric
+                                        label="Reserve"
+                                        value={`$${reserve.toLocaleString()}`}
+                                    />
+
+                                    <Metric
+                                        label="Market Capacity"
+                                        value={`$${capacity.toLocaleString()}`}
+                                    />
+
+                                    <Metric
+                                        label="Your Balance"
+                                        value={`${pairTokenBalance.toLocaleString()} tokens`}
+                                    />
+
+                                </div>
+
+                                <div className="mt-6 border-t border-[#3D3B3A]/10 pt-5 text-xs text-[#3D3B3A]/35">
+                                    <p>
+                                        Market:{" "}
+                                        {onchainPair.market.address.slice(
+                                            0,
+                                            8
+                                        )}
+                                        ...
+                                        {onchainPair.market.address.slice(
+                                            -6
+                                        )}
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            {/* TRADE */}
+
+                            <div className="rounded-[2rem] bg-[#E2A9F1]/20 p-7">
+
+                                <div className="mb-6 grid grid-cols-2 rounded-full bg-white/60 p-1">
+
+                                    <button
+                                        onClick={() =>
+                                            setMarketMode(
+                                                "buy"
+                                            )
+                                        }
+                                        className={`rounded-full py-3 text-sm transition ${marketMode ===
+                                            "buy"
+                                            ? "bg-[#3D3B3A] text-[#E2A9F1]"
+                                            : "text-[#3D3B3A]/50"
+                                            }`}
+                                    >
+                                        Buy
+                                    </button>
+
+                                    <button
+                                        onClick={() =>
+                                            setMarketMode(
+                                                "sell"
+                                            )
+                                        }
+                                        className={`rounded-full py-3 text-sm transition ${marketMode ===
+                                            "sell"
+                                            ? "bg-[#3D3B3A] text-[#E2A9F1]"
+                                            : "text-[#3D3B3A]/50"
+                                            }`}
+                                    >
+                                        Sell
+                                    </button>
+
+                                </div>
+
+                                <label className="mb-2 block text-xs uppercase tracking-[0.14em] text-[#3D3B3A]/35">
+                                    Pair Tokens
+                                </label>
+
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={
+                                        tokenAmount
+                                    }
+                                    disabled={
+                                        tradingMarket
+                                    }
+                                    onChange={(event) =>
+                                        setTokenAmount(
+                                            event
+                                                .target
+                                                .value
+                                        )
+                                    }
+                                    className="mb-4 w-full rounded-2xl border border-[#3D3B3A]/10 bg-white/60 px-5 py-4 text-2xl outline-none"
+                                />
+
+                                <div className="mb-6 rounded-2xl bg-white/50 p-5">
+
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-[#3D3B3A]/45">
+                                            {marketMode ===
+                                                "buy"
+                                                ? "Estimated cost"
+                                                : "Estimated return"}
+                                        </span>
+
+                                        <span className="font-medium">
+                                            {quotedUsdc !==
+                                                null
+                                                ? `$${quotedUsdc.toFixed(
+                                                    2
+                                                )}`
+                                                : "—"}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-3 flex justify-between text-sm">
+                                        <span className="text-[#3D3B3A]/45">
+                                            Your Pair Tokens
+                                        </span>
+
+                                        <span>
+                                            {pairTokenBalance.toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                </div>
+
+                                <button
+                                    disabled={
+                                        tradingMarket ||
+                                        !walletAddress ||
+                                        quotedUsdc === null ||
+                                        (
+                                            marketMode ===
+                                            "sell" &&
+                                            Number(
+                                                tokenAmount
+                                            ) >
+                                            pairTokenBalance
+                                        )
+                                    }
+                                    onClick={() =>
+                                        void handlePairTrade()
+                                    }
+                                    className="flex w-full items-center justify-between rounded-full bg-[#3D3B3A] py-2 pl-6 pr-2 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                                >
+
+                                    {tradingMarket
+                                        ? "Confirming..."
+                                        : marketMode ===
+                                            "buy"
+                                            ? `Buy ${tokenAmount || "0"} token${tokenAmount === "1"
+                                                ? ""
+                                                : "s"
+                                            }`
+                                            : `Sell ${tokenAmount || "0"} token${tokenAmount === "1"
+                                                ? ""
+                                                : "s"
+                                            }`}
+
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A]">
+                                        <ArrowUpRight className="h-4 w-4" />
+                                    </span>
+
+                                </button>
+
+                                {marketMessage && (
+                                    <p className="mt-4 text-xs leading-relaxed text-[#3D3B3A]/50">
+                                        {marketMessage}
+                                    </p>
+                                )}
+
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-[2rem] border border-[#3D3B3A]/10 p-8">
+
+                            <p className="text-xl font-medium">
+                                Pair Market not activated.
+                            </p>
+
+                            <p className="mt-2 max-w-xl text-sm text-[#3D3B3A]/45">
+                                Both Pair members must provide financial
+                                consent before a Pair Token market can
+                                become active.
+                            </p>
+
+                        </div>
+                    )}
+
+                </section>
                 {/* ======================
             MILESTONE INBOX
         ======================= */}
@@ -491,18 +1256,18 @@ const [activeMilestones, setActiveMilestones] =
 
                     <div className="grid gap-5 lg:grid-cols-2">
                         {proposals.map((proposal, index) => (
-                           <MilestoneProposal
-  key={proposal.id}
-  proposal={proposal}
-  index={index}
-  otherUserName={pair.userB.name}
-  onAccept={() =>
-    handleAcceptProposal(proposal.id)
-  }
-  onReject={() =>
-    handleRejectProposal(proposal.id)
-  }
-/>
+                            <MilestoneProposal
+                                key={proposal.id}
+                                proposal={proposal}
+                                index={index}
+                                otherUserName={pair.userB.name}
+                                onAccept={() =>
+                                    handleAcceptProposal(proposal.id)
+                                }
+                                onReject={() =>
+                                    handleRejectProposal(proposal.id)
+                                }
+                            />
                         ))}
                     </div>
                 </section>
@@ -532,17 +1297,17 @@ function Metric({
 }
 
 function MilestoneProposal({
-  proposal,
-  index,
-  otherUserName,
-  onAccept,
-  onReject,
+    proposal,
+    index,
+    otherUserName,
+    onAccept,
+    onReject,
 }: {
-  proposal: Proposal
-  index: number
-  otherUserName: string
-  onAccept: () => void
-  onReject: () => void
+    proposal: Proposal
+    index: number
+    otherUserName: string
+    onAccept: () => void
+    onReject: () => void
 }) {
     return (
         <motion.div
@@ -618,71 +1383,71 @@ function MilestoneProposal({
                 <Clock className="mt-0.5 h-4 w-4 shrink-0" />
 
                 <div className="mb-6 space-y-2">
-  <AcceptanceStatus
-    name="You"
-    accepted={proposal.acceptedByA}
-  />
+                    <AcceptanceStatus
+                        name="You"
+                        accepted={proposal.acceptedByA}
+                    />
 
-  <AcceptanceStatus
-    name={otherUserName}
-    accepted={proposal.acceptedByB}
-  />
-</div>
+                    <AcceptanceStatus
+                        name={otherUserName}
+                        accepted={proposal.acceptedByB}
+                    />
+                </div>
             </div>
 
             {/* BUTTONS */}
-           <div className="grid grid-cols-2 gap-3">
-  <button
-    onClick={onReject}
-    className="rounded-full border border-[#3D3B3A]/10 py-3 text-sm text-[#3D3B3A]/55 transition hover:bg-[#3D3B3A]/5"
-  >
-    Reject
-  </button>
+            <div className="grid grid-cols-2 gap-3">
+                <button
+                    onClick={onReject}
+                    className="rounded-full border border-[#3D3B3A]/10 py-3 text-sm text-[#3D3B3A]/55 transition hover:bg-[#3D3B3A]/5"
+                >
+                    Reject
+                </button>
 
-  <button
-    onClick={onAccept}
-    disabled={proposal.acceptedByA}
-    className="group flex items-center justify-between rounded-full bg-[#3D3B3A] py-2 pl-5 pr-2 text-sm font-medium text-[#E2A9F1] transition-opacity disabled:cursor-default disabled:opacity-50"
-  >
-    {proposal.acceptedByA
-      ? `Waiting for ${otherUserName}`
-      : "Accept"}
+                <button
+                    onClick={onAccept}
+                    disabled={proposal.acceptedByA}
+                    className="group flex items-center justify-between rounded-full bg-[#3D3B3A] py-2 pl-5 pr-2 text-sm font-medium text-[#E2A9F1] transition-opacity disabled:cursor-default disabled:opacity-50"
+                >
+                    {proposal.acceptedByA
+                        ? `Waiting for ${otherUserName}`
+                        : "Accept"}
 
-    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A]">
-      {proposal.acceptedByA ? (
-        <Clock className="h-4 w-4" />
-      ) : (
-        <ArrowUpRight className="h-4 w-4" />
-      )}
-    </span>
-  </button>
-</div>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A]">
+                        {proposal.acceptedByA ? (
+                            <Clock className="h-4 w-4" />
+                        ) : (
+                            <ArrowUpRight className="h-4 w-4" />
+                        )}
+                    </span>
+                </button>
+            </div>
         </motion.div>
     )
 }
 
 function AcceptanceStatus({
-  name,
-  accepted,
+    name,
+    accepted,
 }: {
-  name: string
-  accepted: boolean
+    name: string
+    accepted: boolean
 }) {
-  return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-[#3D3B3A]/45">
-        {name}
-      </span>
+    return (
+        <div className="flex items-center justify-between text-xs">
+            <span className="text-[#3D3B3A]/45">
+                {name}
+            </span>
 
-      <span
-        className={
-          accepted
-            ? "font-medium text-[#3D3B3A]"
-            : "text-[#3D3B3A]/30"
-        }
-      >
-        {accepted ? "✓ Accepted" : "Waiting"}
-      </span>
-    </div>
-  )
+            <span
+                className={
+                    accepted
+                        ? "font-medium text-[#3D3B3A]"
+                        : "text-[#3D3B3A]/30"
+                }
+            >
+                {accepted ? "✓ Accepted" : "Waiting"}
+            </span>
+        </div>
+    )
 }

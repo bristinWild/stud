@@ -17,6 +17,24 @@ import {
     X,
 } from "lucide-react"
 
+import {
+    WalletButton,
+} from "@/components/wallet-button"
+
+import {
+    useWallet,
+} from "@/components/wallet-provider"
+
+import {
+    type Address,
+} from "viem"
+
+import {
+    createPairFromMatch,
+} from "@/lib/pair"
+
+import Link from "next/link"
+
 type Profile = {
     id: number
     name: string
@@ -26,6 +44,7 @@ type Profile = {
     bio: string
     interests: string[]
     image: string
+    wallet?: Address
     likedYou?: boolean
 }
 
@@ -49,6 +68,10 @@ const profiles: Profile[] = [
         bio: "Building things, finding good food, and never skipping sunset.",
         interests: ["Startups", "Food", "Travel"],
         image: "/images/profiles/leo.jpg",
+
+        wallet:
+            "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+
         likedYou: true,
     },
     {
@@ -76,32 +99,155 @@ const profiles: Profile[] = [
 export default function DiscoverPage() {
     const router = useRouter()
 
+    const {
+        address: walletAddress,
+    } = useWallet()
+
+    const [
+        creatingPair,
+        setCreatingPair,
+    ] = useState(false)
+
+    const [
+        pairId,
+        setPairId,
+    ] = useState<bigint | null>(
+        null
+    )
+
+    const [
+        pairMessage,
+        setPairMessage,
+    ] = useState("")
+
+
+
     const [currentIndex, setCurrentIndex] = useState(0)
     const [direction, setDirection] = useState<1 | -1>(1)
     const [match, setMatch] = useState<Profile | null>(null)
 
+
+
     const profile = profiles[currentIndex]
 
-    const moveNext = (swipeDirection: 1 | -1) => {
-        if (!profile) return
-
-        setDirection(swipeDirection)
-
-        if (swipeDirection === 1 && profile.likedYou) {
-            setTimeout(() => {
-                setMatch(profile)
-            }, 250)
+    const moveNext = async (
+        swipeDirection: 1 | -1
+    ) => {
+        if (
+            !profile ||
+            creatingPair
+        ) {
+            return
         }
 
-        setTimeout(() => {
-            setCurrentIndex((prev) => prev + 1)
-        }, 250)
+        setDirection(
+            swipeDirection
+        )
+
+        // PASS
+        if (
+            swipeDirection === -1
+        ) {
+            setTimeout(() => {
+                setCurrentIndex(
+                    (prev) =>
+                        prev + 1
+                )
+            }, 250)
+
+            return
+        }
+
+        // LIKE, but not mutual
+        if (
+            !profile.likedYou
+        ) {
+            setTimeout(() => {
+                setCurrentIndex(
+                    (prev) =>
+                        prev + 1
+                )
+            }, 250)
+
+            return
+        }
+
+        // MUTUAL MATCH
+        if (!walletAddress) {
+            setPairMessage(
+                "Connect your verified Stud wallet before matching."
+            )
+
+            return
+        }
+
+        if (!profile.wallet) {
+            setPairMessage(
+                "This profile is not connected to an onchain Stud yet."
+            )
+
+            return
+        }
+
+        try {
+            setCreatingPair(
+                true
+            )
+
+            setPairMessage(
+                "Mutual match! Creating your Pair onchain..."
+            )
+
+            const result =
+                await createPairFromMatch(
+                    profile.wallet
+                )
+
+            setPairId(
+                result.pairId
+            )
+
+            setPairMessage(
+                result.alreadyExisted
+                    ? `Pair #${result.pairId.toString()} already exists.`
+                    : `Pair #${result.pairId.toString()} created onchain.`
+            )
+
+            setMatch(
+                profile
+            )
+
+            setTimeout(() => {
+                setCurrentIndex(
+                    (prev) =>
+                        prev + 1
+                )
+            }, 250)
+        } catch (error) {
+            console.error(
+                error
+            )
+
+            setPairMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not create Pair."
+            )
+        } finally {
+            setCreatingPair(
+                false
+            )
+        }
     }
 
     const restart = () => {
         setCurrentIndex(0)
         setMatch(null)
+        setPairId(null)
+        setPairMessage("")
     }
+
+
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-background px-6 py-6">
@@ -127,11 +273,14 @@ export default function DiscoverPage() {
                     STUD
                 </button>
 
-                <div className="flex items-center gap-2 text-xs text-[#3D3B3A]/50">
-                    <BadgeCheck className="h-4 w-4" />
-                    Verified
-                </div>
+                <WalletButton />
             </header>
+
+            {pairMessage && (
+                <div className="relative z-30 mx-auto mt-5 max-w-xl rounded-2xl border border-[#3D3B3A]/10 bg-[#E2A9F1]/30 px-5 py-4 text-center text-sm text-[#3D3B3A]">
+                    {pairMessage}
+                </div>
+            )}
 
             {/* Main */}
             <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-7xl items-center justify-center">
@@ -210,7 +359,10 @@ export default function DiscoverPage() {
 
                         <div className="flex gap-4">
                             <button
-                                disabled={!profile}
+                                disabled={
+                                    !profile ||
+                                    creatingPair
+                                }
                                 onClick={() => moveNext(-1)}
                                 className="flex h-16 w-16 items-center justify-center rounded-full border border-[#3D3B3A]/10 bg-white transition-all hover:scale-105 hover:bg-[#3D3B3A] hover:text-white disabled:opacity-30"
                             >
@@ -218,7 +370,10 @@ export default function DiscoverPage() {
                             </button>
 
                             <button
-                                disabled={!profile}
+                                disabled={
+                                    !profile ||
+                                    creatingPair
+                                }
                                 onClick={() => moveNext(1)}
                                 className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E2A9F1] text-[#3D3B3A] transition-all hover:scale-105 disabled:opacity-30"
                             >
@@ -237,15 +392,25 @@ export default function DiscoverPage() {
             {/* MOBILE ACTIONS */}
             <div className="fixed bottom-8 left-1/2 z-30 flex -translate-x-1/2 gap-5 lg:hidden">
                 <button
+                    disabled={
+                        !profile ||
+                        creatingPair
+                    }
                     onClick={() => moveNext(-1)}
-                    className="flex h-16 w-16 items-center justify-center rounded-full border border-[#3D3B3A]/10 bg-white shadow-lg"
+
+                    className="flex h-16 w-16 items-center justify-center rounded-full border border-[#3D3B3A]/10 bg-white shadow-lg disabled:opacity-30"
                 >
                     <X className="h-6 w-6" />
                 </button>
 
                 <button
+                    disabled={
+                        !profile ||
+                        creatingPair
+                    }
                     onClick={() => moveNext(1)}
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E2A9F1] shadow-lg"
+
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E2A9F1] shadow-lg disabled:opacity-30"
                 >
                     <Heart className="h-6 w-6" />
                 </button>
@@ -256,9 +421,9 @@ export default function DiscoverPage() {
                 {match && (
                     <MatchModal
                         profile={match}
-                        onClose={() => setMatch(null)}
-                        onCreatePair={() =>
-                            router.push("/stud/pair/alice-leo")
+                        pairId={pairId}
+                        onClose={() =>
+                            setMatch(null)
                         }
                     />
                 )}
@@ -379,12 +544,12 @@ function SwipeCard({
 
 function MatchModal({
     profile,
+    pairId,
     onClose,
-    onCreatePair,
 }: {
     profile: Profile
+    pairId: bigint | null
     onClose: () => void
-    onCreatePair: () => void
 }) {
     return (
         <motion.div
@@ -394,9 +559,18 @@ function MatchModal({
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm"
         >
             <motion.div
-                initial={{ scale: 0.9, y: 30 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0 }}
+                initial={{
+                    scale: 0.9,
+                    y: 30,
+                }}
+                animate={{
+                    scale: 1,
+                    y: 0,
+                }}
+                exit={{
+                    scale: 0.9,
+                    opacity: 0,
+                }}
                 transition={{
                     type: "spring",
                     stiffness: 220,
@@ -416,17 +590,32 @@ function MatchModal({
                     It&apos;s a match.
                 </h2>
 
-                <p className="mx-auto mb-8 max-w-sm text-sm leading-relaxed text-[#3D3B3A]/60">
-                    You and {profile.name} liked each other. Your connection can now
-                    become a shared onchain Pair.
+                <p className="mx-auto mb-3 max-w-sm text-sm leading-relaxed text-[#3D3B3A]/60">
+                    You and {profile.name} liked each other.
+                    Your shared onchain identity is ready.
                 </p>
 
-                <button
-                    onClick={onCreatePair}
-                    className="mb-3 w-full rounded-full bg-[#3D3B3A] px-6 py-4 text-sm font-medium text-[#E2A9F1]"
-                >
-                    Create Pair
-                </button>
+                {pairId && (
+                    <p className="mb-8 text-xs font-medium text-[#3D3B3A]/45">
+                        Pair #{pairId.toString()}
+                    </p>
+                )}
+
+                {pairId ? (
+                    <Link
+                        href={`/stud/pair/${pairId.toString()}`}
+                        className="mb-3 block w-full rounded-full bg-[#3D3B3A] px-6 py-4 text-sm font-medium text-[#E2A9F1]"
+                    >
+                        View Pair
+                    </Link>
+                ) : (
+                    <button
+                        disabled
+                        className="mb-3 w-full rounded-full bg-[#3D3B3A] px-6 py-4 text-sm font-medium text-[#E2A9F1] opacity-40"
+                    >
+                        View Pair
+                    </button>
+                )}
 
                 <button
                     onClick={onClose}

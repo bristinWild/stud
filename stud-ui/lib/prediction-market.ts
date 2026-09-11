@@ -123,29 +123,224 @@ const predictionMarketAbi = [
     },
 ] as const
 
-function getEthereumProvider():
-    EIP1193Provider {
+type EIP6963ProviderDetail = {
+    info: {
+        uuid: string
+        name: string
+        icon: string
+        rdns: string
+    }
+    provider: EIP1193Provider
+}
+
+export async function getEthereumProvider():
+    Promise<EIP1193Provider> {
     if (
-        typeof window === 'undefined'
+        typeof window === "undefined"
     ) {
         throw new Error(
-            'Wallet is only available in the browser.',
+            "Wallet is only available in the browser."
         )
     }
 
-    const ethereum = (
-        window as Window & {
-            ethereum?: EIP1193Provider
+    const providers:
+        EIP6963ProviderDetail[] = []
+
+    const handleProvider = (
+        event: Event
+    ) => {
+        const customEvent =
+            event as CustomEvent<EIP6963ProviderDetail>
+
+        const exists =
+            providers.some(
+                (item) =>
+                    item.info.uuid ===
+                    customEvent.detail.info.uuid
+            )
+
+        if (!exists) {
+            providers.push(
+                customEvent.detail
+            )
         }
-    ).ethereum
+    }
 
-    if (!ethereum) {
-        throw new Error(
-            'No EVM browser wallet found.',
+    window.addEventListener(
+        "eip6963:announceProvider",
+        handleProvider
+    )
+
+    window.dispatchEvent(
+        new Event(
+            "eip6963:requestProvider"
+        )
+    )
+
+    await new Promise(
+        (resolve) =>
+            setTimeout(
+                resolve,
+                400
+            )
+    )
+
+    window.removeEventListener(
+        "eip6963:announceProvider",
+        handleProvider
+    )
+
+    console.table(
+        providers.map(
+            (item) => ({
+                name:
+                    item.info.name,
+                rdns:
+                    item.info.rdns,
+                uuid:
+                    item.info.uuid,
+            })
+        )
+    )
+
+    const orderedProviders = [
+        ...providers.filter(
+            (item) =>
+                item.info.rdns ===
+                "io.metamask"
+        ),
+
+        ...providers.filter(
+            (item) =>
+                item.info.rdns !==
+                "io.metamask"
+        ),
+    ]
+
+  for (const item of orderedProviders) {
+    try {
+        const chainId =
+            await item.provider.request({
+                method: "eth_chainId",
+            })
+
+        console.log(
+            "Wallet probe:",
+            item.info.name,
+            item.info.rdns,
+            chainId
+        )
+
+        console.log(
+            "Using wallet:",
+            item.info.name,
+            item.info.rdns
+        )
+
+        return item.provider
+    } catch (error) {
+        console.warn(
+            "Skipping broken provider:",
+            item.info.name,
+            item.info.rdns,
+            error
+        )
+    }
+}
+    throw new Error(
+        "No EVM wallet connected to Anvil chain 31337 was found."
+    )
+}
+
+type EventfulProvider =
+    EIP1193Provider & {
+        on?: (
+            event: string,
+            listener: (...args: any[]) => void
+        ) => void
+
+        removeListener?: (
+            event: string,
+            listener: (...args: any[]) => void
+        ) => void
+    }
+
+export async function watchWalletChanges(
+    onAccountsChanged: (
+        account: Address | null
+    ) => void,
+    onChainChanged?: (
+        chainId: string
+    ) => void
+) {
+    const provider =
+        (await getEthereumProvider()) as EventfulProvider
+
+    const handleAccountsChanged = (
+        accounts: string[]
+    ) => {
+        if (
+            !accounts ||
+            accounts.length === 0
+        ) {
+            onAccountsChanged(null)
+            return
+        }
+
+        onAccountsChanged(
+            getAddress(accounts[0])
         )
     }
 
-    return ethereum
+    const handleChainChanged = (
+        chainId: string
+    ) => {
+        onChainChanged?.(
+            chainId
+        )
+    }
+
+    provider.on?.(
+        "accountsChanged",
+        handleAccountsChanged
+    )
+
+    provider.on?.(
+        "chainChanged",
+        handleChainChanged
+    )
+
+    return () => {
+        provider.removeListener?.(
+            "accountsChanged",
+            handleAccountsChanged
+        )
+
+        provider.removeListener?.(
+            "chainChanged",
+            handleChainChanged
+        )
+    }
+}
+
+export async function disconnectWallet() {
+    const provider =
+        await getEthereumProvider()
+
+    try {
+        await provider.request({
+            method:
+                "wallet_revokePermissions",
+            params: [
+                {
+                    eth_accounts: {},
+                },
+            ],
+        })
+    } catch {
+        // Some wallets do not support permission revocation.
+        // The React app can still clear its local wallet state.
+    }
 }
 
 async function ensureFoundryNetwork(
@@ -214,26 +409,20 @@ async function ensureFoundryNetwork(
 
 async function getWallet() {
     const provider =
-        getEthereumProvider()
-
-    await ensureFoundryNetwork(
-        provider,
-    )
+        await getEthereumProvider()
 
     const walletClient =
         createWalletClient({
             chain: foundry,
-            transport:
-                custom(provider),
+            transport: custom(provider),
         })
 
     const [account] =
-        await walletClient
-            .requestAddresses()
+        await walletClient.requestAddresses()
 
     if (!account) {
         throw new Error(
-            'No wallet account connected.',
+            "No wallet account connected."
         )
     }
 
@@ -386,4 +575,70 @@ export async function claimPredictionWinnings(
         hash,
         receipt,
     }
+}
+
+export async function connectWallet() {
+    const provider =
+        await getEthereumProvider()
+
+    await ensureFoundryNetwork(
+        provider
+    )
+
+    const walletClient =
+        createWalletClient({
+            chain: foundry,
+            transport: custom(
+                provider
+            ),
+        })
+
+    const [account] =
+        await walletClient.requestAddresses()
+
+    if (!account) {
+        throw new Error(
+            "No wallet account connected."
+        )
+    }
+
+    return getAddress(
+        account
+    )
+}
+
+
+export async function getConnectedWallet() {
+    const provider =
+        await getEthereumProvider()
+
+    const chainId =
+        await provider.request({
+            method:
+                "eth_chainId",
+        })
+
+    if (
+        chainId !==
+        "0x7a69"
+    ) {
+        return null
+    }
+
+    const accounts =
+        (await provider.request({
+            method:
+                "eth_accounts",
+        })) as string[]
+
+    if (
+        !accounts ||
+        accounts.length === 0
+    ) {
+        return null
+    }
+
+    return getAddress(
+        accounts[0]
+    )
 }
