@@ -262,11 +262,21 @@ export async function createPairFromMatch(
                 ],
             })
 
-    await publicClient
-        .waitForTransactionReceipt({
-            hash:
-                transactionHash,
-        })
+    const receipt =
+        await publicClient
+            .waitForTransactionReceipt({
+                hash:
+                    transactionHash,
+            })
+
+    if (
+        receipt.status !==
+        "success"
+    ) {
+        throw new Error(
+            "Pair creation transaction reverted."
+        )
+    }
 
     const pairId =
         await publicClient

@@ -604,6 +604,18 @@ export async function sellPairTokens(
     }
 }
 
+export async function getPairMarketActivationDeadline() {
+    const pendingBlock =
+        await publicClient.getBlock({
+            blockTag: "pending",
+        })
+
+    return (
+        pendingBlock.timestamp +
+        60n * 60n
+    )
+}
+
 /*
  * MARKET ACTIVATION
  *

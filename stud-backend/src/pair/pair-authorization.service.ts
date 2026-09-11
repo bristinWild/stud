@@ -11,6 +11,8 @@ import {
     isAddress,
     type Address,
     type Hex,
+    createPublicClient,
+    http,
 } from 'viem';
 
 import {
@@ -94,10 +96,25 @@ export class PairAuthorizationService {
                 ? [walletA, walletB]
                 : [walletB, walletA];
 
-        const deadline = BigInt(
-            Math.floor(Date.now() / 1000) +
-            10 * 60,
-        );
+        const rpcUrl =
+            this.configService.get<string>(
+                'WORLD_CHAIN_RPC_URL',
+            ) ??
+            'http://127.0.0.1:8545';
+
+        const publicClient =
+            createPublicClient({
+                transport: http(rpcUrl),
+            });
+
+        const pendingBlock =
+            await publicClient.getBlock({
+                blockTag: 'pending',
+            });
+
+        const deadline =
+            pendingBlock.timestamp +
+            60n * 60n;
 
         const account =
             privateKeyToAccount(privateKey);

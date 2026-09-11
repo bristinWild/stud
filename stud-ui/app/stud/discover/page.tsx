@@ -58,6 +58,11 @@ const profiles: Profile[] = [
         bio: "Coffee, live music, spontaneous weekend plans.",
         interests: ["Coffee", "Design", "Music"],
         image: "/images/profiles/noah.jpg",
+
+        wallet:
+            "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+
+        likedYou: true,
     },
     {
         id: 2,

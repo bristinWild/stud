@@ -8,7 +8,10 @@ import { ConfigService } from '@nestjs/config';
 import {
     Address,
     Hex,
+    createPublicClient,
+    http,
 } from 'viem';
+
 
 import { privateKeyToAccount } from 'viem/accounts';
 
@@ -60,11 +63,25 @@ export class RegistrationAuthorizationService {
             privateKeyToAccount(privateKey);
 
         // Authorization valid for 10 minutes.
+        const rpcUrl =
+            this.configService.get<string>(
+                'WORLD_CHAIN_RPC_URL',
+            ) ??
+            'http://127.0.0.1:8545';
+
+        const publicClient =
+            createPublicClient({
+                transport: http(rpcUrl),
+            });
+
+        const pendingBlock =
+            await publicClient.getBlock({
+                blockTag: 'pending',
+            });
+
         const deadline =
-            BigInt(
-                Math.floor(Date.now() / 1000) +
-                10 * 60,
-            );
+            pendingBlock.timestamp +
+            60n * 60n;
 
         const signature =
             await account.signTypedData({

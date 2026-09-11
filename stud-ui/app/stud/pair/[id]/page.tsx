@@ -24,7 +24,7 @@ import {
 import {
     formatUnits,
     type Address,
-
+    type Hex,
 } from "viem"
 
 import {
@@ -32,13 +32,22 @@ import {
 } from "@/components/wallet-provider"
 
 import {
+    activatePairMarket,
     buyPairTokens,
+    getPairMarketActivationDeadline,
     getPairMarketQuote,
     getPairTokenBalance,
     sellPairTokens,
+    signPairMarketActivation,
 } from "@/lib/pair-market"
 
-
+import {
+    acceptMilestone,
+    attestMilestoneCompletion,
+    getPairMilestones,
+    proposeMilestone,
+    type OnchainMilestone,
+} from "@/lib/milestone"
 
 type Proposal = {
     id: number
@@ -51,6 +60,14 @@ type Proposal = {
     status: string
     acceptedByA: boolean
     acceptedByB: boolean
+}
+
+type MarketConsent = {
+    signer: Address
+    signature: Hex
+    deadline: string
+    tokenName: string
+    tokenSymbol: string
 }
 
 type ActiveMilestone = {
@@ -347,6 +364,73 @@ export default function PairDashboardPage() {
     ] =
         useState("")
 
+    const [
+        milestones,
+        setMilestones,
+    ] =
+        useState<
+            OnchainMilestone[]
+        >([])
+
+    const [
+        milestoneTitle,
+        setMilestoneTitle,
+    ] =
+        useState("")
+
+    const [
+        loadingMilestones,
+        setLoadingMilestones,
+    ] =
+        useState(false)
+
+    const [
+        milestoneActionId,
+        setMilestoneActionId,
+    ] =
+        useState<bigint | null>(
+            null
+        )
+
+    const [
+        milestoneMessage,
+        setMilestoneMessage,
+    ] =
+        useState("")
+
+    const [
+        marketConsent,
+        setMarketConsent,
+    ] =
+        useState<MarketConsent | null>(
+            null
+        )
+
+    const [
+        marketActivationBusy,
+        setMarketActivationBusy,
+    ] =
+        useState(false)
+
+    const [
+        marketActivationMessage,
+        setMarketActivationMessage,
+    ] =
+        useState("")
+
+
+    const marketTokenName =
+        `${pair.names} Pair Token`
+
+    const marketTokenSymbol =
+        pair.token.replace(
+            "$",
+            ""
+        )
+
+    const consentStorageKey =
+        `stud-market-consent-${pairId}`
+
 
     async function loadPair() {
         try {
@@ -392,6 +476,38 @@ export default function PairDashboardPage() {
         }
     }
 
+
+    async function loadMilestones() {
+        try {
+            setLoadingMilestones(
+                true
+            )
+
+            const result =
+                await getPairMilestones(
+                    BigInt(pairId)
+                )
+
+            setMilestones(
+                result
+            )
+        } catch (error) {
+            console.error(
+                error
+            )
+
+            setMilestoneMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not load milestones."
+            )
+        } finally {
+            setLoadingMilestones(
+                false
+            )
+        }
+    }
+
     const [proposals, setProposals] = useState<Proposal[]>(
         pair.proposals
     )
@@ -410,6 +526,10 @@ export default function PairDashboardPage() {
 
     useEffect(() => {
         void loadPair()
+    }, [pairId])
+
+    useEffect(() => {
+        void loadMilestones()
     }, [pairId])
 
     useEffect(() => {
@@ -526,6 +646,51 @@ export default function PairDashboardPage() {
         onchainPair?.market?.address,
     ])
 
+    useEffect(() => {
+        try {
+            const stored =
+                window.localStorage.getItem(
+                    consentStorageKey
+                )
+
+            if (!stored) {
+                return
+            }
+
+            const parsed =
+                JSON.parse(
+                    stored
+                ) as MarketConsent
+
+            setMarketConsent(
+                parsed
+            )
+        } catch (error) {
+            console.error(
+                "Could not restore market consent:",
+                error
+            )
+        }
+    }, [consentStorageKey])
+
+    useEffect(() => {
+        if (
+            !onchainPair?.market?.address
+        ) {
+            return
+        }
+
+        window.localStorage.removeItem(
+            consentStorageKey
+        )
+
+        setMarketConsent(
+            null
+        )
+    }, [
+        onchainPair?.market?.address,
+        consentStorageKey,
+    ])
     const handleAcceptProposal = (proposalId: number) => {
         const proposal = proposals.find(
             (item) => item.id === proposalId
@@ -652,6 +817,195 @@ export default function PairDashboardPage() {
         )
 
 
+    async function handleSignMarketConsent() {
+        if (
+            !walletAddress ||
+            !onchainPair
+        ) {
+            setMarketActivationMessage(
+                "Connect a Pair member wallet first."
+            )
+
+            return
+        }
+
+        const isMember =
+            walletAddress.toLowerCase() ===
+            onchainPair.memberA.toLowerCase() ||
+            walletAddress.toLowerCase() ===
+            onchainPair.memberB.toLowerCase()
+
+        if (!isMember) {
+            setMarketActivationMessage(
+                "Only a Pair member can provide market consent."
+            )
+
+            return
+        }
+
+        try {
+            setMarketActivationBusy(
+                true
+            )
+
+            setMarketActivationMessage(
+                "Sign the Pair Market consent in your wallet..."
+            )
+
+            const deadline =
+                await getPairMarketActivationDeadline()
+
+            const result =
+                await signPairMarketActivation(
+                    BigInt(pairId),
+                    marketTokenName,
+                    marketTokenSymbol,
+                    deadline
+                )
+
+            const consent:
+                MarketConsent = {
+                signer:
+                    result.signer,
+
+                signature:
+                    result.signature,
+
+                deadline:
+                    deadline.toString(),
+
+                tokenName:
+                    marketTokenName,
+
+                tokenSymbol:
+                    marketTokenSymbol,
+            }
+
+            setMarketConsent(
+                consent
+            )
+
+            window.localStorage.setItem(
+                consentStorageKey,
+                JSON.stringify(
+                    consent
+                )
+            )
+
+            setMarketActivationMessage(
+                "Consent signed. Switch to the other Pair member to activate the market."
+            )
+        } catch (error) {
+            setMarketActivationMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not sign market consent."
+            )
+        } finally {
+            setMarketActivationBusy(
+                false
+            )
+        }
+    }
+
+    async function handleActivateMarket() {
+        if (
+            !walletAddress ||
+            !onchainPair ||
+            !marketConsent
+        ) {
+            return
+        }
+
+        const wallet =
+            walletAddress.toLowerCase()
+
+        const memberA =
+            onchainPair.memberA.toLowerCase()
+
+        const memberB =
+            onchainPair.memberB.toLowerCase()
+
+        if (
+            wallet !== memberA &&
+            wallet !== memberB
+        ) {
+            setMarketActivationMessage(
+                "Only the other Pair member can activate the market."
+            )
+
+            return
+        }
+
+        if (
+            wallet ===
+            marketConsent.signer.toLowerCase()
+        ) {
+            setMarketActivationMessage(
+                "Switch to the other Pair member wallet."
+            )
+
+            return
+        }
+
+        try {
+            setMarketActivationBusy(
+                true
+            )
+
+            setMarketActivationMessage(
+                "Activating Pair Market onchain..."
+            )
+
+            await activatePairMarket(
+                BigInt(pairId),
+
+                marketConsent
+                    .tokenName,
+
+                marketConsent
+                    .tokenSymbol,
+
+                BigInt(
+                    marketConsent
+                        .deadline
+                ),
+
+                marketConsent
+                    .signature
+            )
+
+            window.localStorage.removeItem(
+                consentStorageKey
+            )
+
+            setMarketConsent(
+                null
+            )
+
+            setMarketActivationMessage(
+                "Pair Market activated successfully."
+            )
+
+            await loadPair()
+        } catch (error) {
+            console.error(
+                error
+            )
+
+            setMarketActivationMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Pair Market activation failed."
+            )
+        } finally {
+            setMarketActivationBusy(
+                false
+            )
+        }
+    }
+
+
 
 
     async function handlePairTrade() {
@@ -766,6 +1120,148 @@ export default function PairDashboardPage() {
             )
         }
     }
+
+    async function handleProposeMilestone() {
+        try {
+            setMilestoneMessage(
+                "Waiting for proposal confirmation..."
+            )
+
+            await proposeMilestone(
+                BigInt(pairId),
+                milestoneTitle
+            )
+
+            setMilestoneTitle(
+                ""
+            )
+
+            setMilestoneMessage(
+                "Milestone proposed onchain."
+            )
+
+            await loadMilestones()
+        } catch (error) {
+            setMilestoneMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not propose milestone."
+            )
+        }
+    }
+
+    async function handleAcceptMilestone(
+        milestoneId: bigint
+    ) {
+        try {
+            setMilestoneActionId(
+                milestoneId
+            )
+
+            setMilestoneMessage(
+                "Waiting for acceptance confirmation..."
+            )
+
+            await acceptMilestone(
+                milestoneId
+            )
+
+            setMilestoneMessage(
+                "Milestone accepted."
+            )
+
+            await loadMilestones()
+        } catch (error) {
+            setMilestoneMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not accept milestone."
+            )
+        } finally {
+            setMilestoneActionId(
+                null
+            )
+        }
+    }
+
+    async function handleAttestMilestone(
+        milestoneId: bigint
+    ) {
+        try {
+            setMilestoneActionId(
+                milestoneId
+            )
+
+            setMilestoneMessage(
+                "Waiting for completion attestation..."
+            )
+
+            await attestMilestoneCompletion(
+                milestoneId
+            )
+
+            setMilestoneMessage(
+                "Completion attested onchain."
+            )
+
+            /*
+             * Second attestation may have
+             * increased reputation.
+             */
+            await Promise.all([
+                loadMilestones(),
+                loadPair(),
+            ])
+        } catch (error) {
+            setMilestoneMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Could not attest completion."
+            )
+        } finally {
+            setMilestoneActionId(
+                null
+            )
+        }
+    }
+
+    const proposedMilestones =
+        milestones.filter(
+            (milestone) =>
+                milestone.status === 0
+        )
+
+    const activeOnchainMilestones =
+        milestones.filter(
+            (milestone) =>
+                milestone.status === 1
+        )
+
+    const completedOnchainMilestones =
+        milestones.filter(
+            (milestone) =>
+                milestone.status === 2
+        )
+
+    const connectedIsMemberA =
+        Boolean(
+            walletAddress &&
+            onchainPair &&
+            walletAddress.toLowerCase() ===
+            onchainPair.memberA.toLowerCase()
+        )
+
+    const connectedIsMemberB =
+        Boolean(
+            walletAddress &&
+            onchainPair &&
+            walletAddress.toLowerCase() ===
+            onchainPair.memberB.toLowerCase()
+        )
+
+    const connectedIsPairMember =
+        connectedIsMemberA ||
+        connectedIsMemberB
 
     return (
         <main className="min-h-screen bg-background text-[#3D3B3A]">
@@ -953,7 +1449,9 @@ export default function PairDashboardPage() {
 
                             <Metric
                                 label="Pending Proposals"
-                                value={String(proposals.length)}
+                                value={String(
+                                    proposedMilestones.length
+                                )}
                             />
                         </div>
                     </div>
@@ -1219,56 +1717,399 @@ export default function PairDashboardPage() {
                                 Pair Market not activated.
                             </p>
 
-                            <p className="mt-2 max-w-xl text-sm text-[#3D3B3A]/45">
-                                Both Pair members must provide financial
-                                consent before a Pair Token market can
-                                become active.
+                            <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#3D3B3A]/45">
+                                Your Pair already exists socially,
+                                but its financial layer requires
+                                explicit consent from both members.
                             </p>
+
+                            <div className="mt-7 rounded-2xl bg-[#E2A9F1]/20 p-5">
+
+                                {!marketConsent ? (
+                                    <>
+                                        <p className="mb-4 text-sm text-[#3D3B3A]/60">
+                                            First Pair member:
+                                            sign the market activation consent.
+                                        </p>
+
+                                        <button
+                                            disabled={
+                                                marketActivationBusy ||
+                                                !walletAddress
+                                            }
+                                            onClick={() =>
+                                                void handleSignMarketConsent()
+                                            }
+                                            className="rounded-full bg-[#3D3B3A] px-6 py-3 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                                        >
+                                            {marketActivationBusy
+                                                ? "Signing..."
+                                                : "Give market consent"}
+                                        </button>
+                                    </>
+                                ) : walletAddress &&
+                                    walletAddress.toLowerCase() ===
+                                    marketConsent.signer.toLowerCase() ? (
+                                    <>
+                                        <p className="text-sm font-medium">
+                                            Your consent is signed ✓
+                                        </p>
+
+                                        <p className="mt-2 text-sm text-[#3D3B3A]/45">
+                                            Switch MetaMask to the
+                                            other Pair member.
+                                        </p>
+
+                                        <p className="mt-3 text-xs text-[#3D3B3A]/35">
+                                            Signed by{" "}
+                                            {marketConsent.signer.slice(
+                                                0,
+                                                6
+                                            )}
+                                            ...
+                                            {marketConsent.signer.slice(
+                                                -4
+                                            )}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="mb-2 text-sm font-medium">
+                                            Counterparty consent received ✓
+                                        </p>
+
+                                        <p className="mb-5 text-sm text-[#3D3B3A]/45">
+                                            You are the second Pair member.
+                                            Confirm to create the Pair Token
+                                            and Pair Market onchain.
+                                        </p>
+
+                                        <button
+                                            disabled={
+                                                marketActivationBusy ||
+                                                !walletAddress
+                                            }
+                                            onClick={() =>
+                                                void handleActivateMarket()
+                                            }
+                                            className="rounded-full bg-[#3D3B3A] px-6 py-3 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                                        >
+                                            {marketActivationBusy
+                                                ? "Activating..."
+                                                : "Activate Pair Market"}
+                                        </button>
+                                    </>
+                                )}
+
+                                {marketActivationMessage && (
+                                    <p className="mt-5 text-xs leading-relaxed text-[#3D3B3A]/50">
+                                        {marketActivationMessage}
+                                    </p>
+                                )}
+
+                            </div>
 
                         </div>
                     )}
 
                 </section>
                 {/* ======================
-            MILESTONE INBOX
-        ======================= */}
+    REAL MILESTONES
+======================= */}
+
                 <section>
-                    <div className="mb-7 flex items-end justify-between">
-                        <div>
-                            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-[#3D3B3A]/35">
-                                Milestone inbox
-                            </p>
+                    <div className="mb-7">
+                        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-[#3D3B3A]/35">
+                            Milestones
+                        </p>
 
-                            <h2 className="font-serif text-4xl">
-                                Decide what you do together.
-                            </h2>
+                        <h2 className="font-serif text-4xl">
+                            Build your reputation together.
+                        </h2>
 
-                            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#3D3B3A]/45">
-                                Investors and community members may propose milestones,
-                                but nothing becomes active until both Pair members agree.
-                            </p>
-                        </div>
-
-                        <span className="hidden text-xs text-[#3D3B3A]/35 sm:block">
-                            {proposals.length} pending
-                        </span>
+                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#3D3B3A]/45">
+                            Anyone may propose a milestone.
+                            Both Pair members must accept it and
+                            both must attest completion before
+                            reputation is awarded.
+                        </p>
                     </div>
 
-                    <div className="grid gap-5 lg:grid-cols-2">
-                        {proposals.map((proposal, index) => (
-                            <MilestoneProposal
-                                key={proposal.id}
-                                proposal={proposal}
-                                index={index}
-                                otherUserName={pair.userB.name}
-                                onAccept={() =>
-                                    handleAcceptProposal(proposal.id)
+                    {/* PROPOSE */}
+
+                    <div className="mb-10 rounded-[2rem] bg-[#E2A9F1]/20 p-7">
+                        <p className="mb-4 text-xs uppercase tracking-[0.16em] text-[#3D3B3A]/35">
+                            Propose milestone
+                        </p>
+
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <input
+                                value={
+                                    milestoneTitle
                                 }
-                                onReject={() =>
-                                    handleRejectProposal(proposal.id)
+                                onChange={(event) =>
+                                    setMilestoneTitle(
+                                        event.target.value
+                                    )
                                 }
+                                placeholder="e.g. Complete another verified video call"
+                                className="flex-1 rounded-full border border-[#3D3B3A]/10 bg-white px-5 py-3 text-sm outline-none"
                             />
-                        ))}
+
+                            <button
+                                disabled={
+                                    !walletAddress ||
+                                    !milestoneTitle.trim()
+                                }
+                                onClick={() =>
+                                    void handleProposeMilestone()
+                                }
+                                className="rounded-full bg-[#3D3B3A] px-6 py-3 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                            >
+                                Propose
+                            </button>
+                        </div>
+
+                        {milestoneMessage && (
+                            <p className="mt-4 text-xs text-[#3D3B3A]/50">
+                                {milestoneMessage}
+                            </p>
+                        )}
+                    </div>
+
+                    {loadingMilestones && (
+                        <p className="mb-5 text-sm text-[#3D3B3A]/40">
+                            Loading onchain milestones...
+                        </p>
+                    )}
+
+                    {/* PROPOSED */}
+
+                    <div className="mb-12">
+                        <div className="mb-5 flex items-center justify-between">
+                            <h3 className="text-xl font-medium">
+                                Proposed
+                            </h3>
+
+                            <span className="text-xs text-[#3D3B3A]/35">
+                                {proposedMilestones.length}
+                            </span>
+                        </div>
+
+                        <div className="grid gap-5 lg:grid-cols-2">
+                            {proposedMilestones.map(
+                                (milestone) => {
+                                    const youAccepted =
+                                        connectedIsMemberA
+                                            ? milestone.memberAAccepted
+                                            : connectedIsMemberB
+                                                ? milestone.memberBAccepted
+                                                : false
+
+                                    const otherAccepted =
+                                        connectedIsMemberA
+                                            ? milestone.memberBAccepted
+                                            : milestone.memberAAccepted
+
+                                    return (
+                                        <div
+                                            key={
+                                                milestone.id.toString()
+                                            }
+                                            className="rounded-[2rem] border border-[#3D3B3A]/10 p-7"
+                                        >
+                                            <p className="mb-2 text-xs text-[#3D3B3A]/35">
+                                                Milestone #
+                                                {milestone.id.toString()}
+                                            </p>
+
+                                            <h4 className="text-xl font-medium">
+                                                {milestone.title}
+                                            </h4>
+
+                                            <p className="mt-2 text-xs text-[#3D3B3A]/35">
+                                                Proposed by{" "}
+                                                {milestone.proposer.slice(
+                                                    0,
+                                                    6
+                                                )}
+                                                ...
+                                                {milestone.proposer.slice(
+                                                    -4
+                                                )}
+                                            </p>
+
+                                            <div className="my-6 space-y-2 border-y border-[#3D3B3A]/10 py-5">
+                                                <AcceptanceStatus
+                                                    name="You"
+                                                    accepted={
+                                                        youAccepted
+                                                    }
+                                                />
+
+                                                <AcceptanceStatus
+                                                    name="Other member"
+                                                    accepted={
+                                                        otherAccepted
+                                                    }
+                                                />
+                                            </div>
+
+                                            <p className="mb-5 text-xs text-[#3D3B3A]/40">
+                                                Completion reward:
+                                                +10 Pair reputation
+                                            </p>
+
+                                            <button
+                                                disabled={
+                                                    !connectedIsPairMember ||
+                                                    youAccepted ||
+                                                    milestoneActionId ===
+                                                    milestone.id
+                                                }
+                                                onClick={() =>
+                                                    void handleAcceptMilestone(
+                                                        milestone.id
+                                                    )
+                                                }
+                                                className="w-full rounded-full bg-[#3D3B3A] px-5 py-3 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                                            >
+                                                {youAccepted
+                                                    ? "Accepted"
+                                                    : "Accept milestone"}
+                                            </button>
+                                        </div>
+                                    )
+                                }
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ACTIVE */}
+
+                    <div className="mb-12">
+                        <div className="mb-5 flex items-center justify-between">
+                            <h3 className="text-xl font-medium">
+                                Active
+                            </h3>
+
+                            <span className="text-xs text-[#3D3B3A]/35">
+                                {activeOnchainMilestones.length}
+                            </span>
+                        </div>
+
+                        <div className="grid gap-5 lg:grid-cols-2">
+                            {activeOnchainMilestones.map(
+                                (milestone) => {
+                                    const youAttested =
+                                        connectedIsMemberA
+                                            ? milestone.memberAAttested
+                                            : connectedIsMemberB
+                                                ? milestone.memberBAttested
+                                                : false
+
+                                    const otherAttested =
+                                        connectedIsMemberA
+                                            ? milestone.memberBAttested
+                                            : milestone.memberAAttested
+
+                                    return (
+                                        <div
+                                            key={
+                                                milestone.id.toString()
+                                            }
+                                            className="rounded-[2rem] border border-[#3D3B3A]/10 bg-[#E2A9F1]/10 p-7"
+                                        >
+                                            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-[#3D3B3A]/35">
+                                                Active milestone #
+                                                {milestone.id.toString()}
+                                            </p>
+
+                                            <h4 className="text-xl font-medium">
+                                                {milestone.title}
+                                            </h4>
+
+                                            <div className="my-6 space-y-2 border-y border-[#3D3B3A]/10 py-5">
+                                                <AcceptanceStatus
+                                                    name="You completed"
+                                                    accepted={
+                                                        youAttested
+                                                    }
+                                                />
+
+                                                <AcceptanceStatus
+                                                    name="Other member completed"
+                                                    accepted={
+                                                        otherAttested
+                                                    }
+                                                />
+                                            </div>
+
+                                            <button
+                                                disabled={
+                                                    !connectedIsPairMember ||
+                                                    youAttested ||
+                                                    milestoneActionId ===
+                                                    milestone.id
+                                                }
+                                                onClick={() =>
+                                                    void handleAttestMilestone(
+                                                        milestone.id
+                                                    )
+                                                }
+                                                className="w-full rounded-full bg-[#3D3B3A] px-5 py-3 text-sm font-medium text-[#E2A9F1] disabled:opacity-40"
+                                            >
+                                                {youAttested
+                                                    ? "Completion attested"
+                                                    : "Attest completion"}
+                                            </button>
+                                        </div>
+                                    )
+                                }
+                            )}
+                        </div>
+                    </div>
+
+                    {/* COMPLETED */}
+
+                    <div>
+                        <div className="mb-5 flex items-center justify-between">
+                            <h3 className="text-xl font-medium">
+                                Completed
+                            </h3>
+
+                            <span className="text-xs text-[#3D3B3A]/35">
+                                {completedOnchainMilestones.length}
+                            </span>
+                        </div>
+
+                        <div className="space-y-3">
+                            {completedOnchainMilestones.map(
+                                (milestone) => (
+                                    <div
+                                        key={
+                                            milestone.id.toString()
+                                        }
+                                        className="flex items-center justify-between rounded-2xl bg-[#3D3B3A]/5 px-5 py-4"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-medium">
+                                                {milestone.title}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-[#3D3B3A]/35">
+                                                Milestone #
+                                                {milestone.id.toString()}
+                                            </p>
+                                        </div>
+
+                                        <span className="text-sm font-medium">
+                                            +10 reputation
+                                        </span>
+                                    </div>
+                                )
+                            )}
+                        </div>
                     </div>
                 </section>
             </div>
