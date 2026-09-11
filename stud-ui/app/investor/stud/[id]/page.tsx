@@ -103,7 +103,7 @@ const studData = {
 
     noah: {
         id: "noah",
-        onchainStudId: null,
+        onchainStudId: 3,
         name: "Noah",
         age: 25,
         occupation: "Product Designer",
@@ -116,7 +116,7 @@ const studData = {
 
     leo: {
         id: "leo",
-        onchainStudId: null,
+        onchainStudId: 2,
         name: "Leo",
         age: 27,
         occupation: "Founder",

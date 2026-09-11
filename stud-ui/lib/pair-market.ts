@@ -280,7 +280,8 @@ export async function getPairTokenBalance(
                     getAddress(
                         pairTokenAddress
                     ),
-                abi: erc20Abi,
+                abi:
+                    erc20Abi,
                 functionName:
                     "balanceOf",
                 args: [
@@ -381,6 +382,33 @@ export async function buyPairTokens(
                     amount,
                 ],
             })
+
+
+    const balance =
+        await publicClient
+            .readContract({
+                address:
+                    quoteToken,
+                abi:
+                    erc20Abi,
+                functionName:
+                    "balanceOf",
+                args: [
+                    account,
+                ],
+            })
+
+    if (
+        balance <
+        cost
+    ) {
+        throw new Error(
+            `Insufficient MockUSDC balance. This purchase requires ${formatUnits(
+                cost,
+                6
+            )} USDC.`
+        )
+    }
 
     const allowance =
         await publicClient
