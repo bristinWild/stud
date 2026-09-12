@@ -26,30 +26,46 @@ import {
       useFactory: (
         configService: ConfigService,
       ) => {
-        const databaseUrl =
+        const host =
           configService.getOrThrow<string>(
-            'DATABASE_URL',
+            'PGHOST',
           );
 
-        try {
-          const parsed =
-            new URL(databaseUrl);
+        const port = Number(
+          configService.getOrThrow<string>(
+            'PGPORT',
+          ),
+        );
 
-          console.log(
-            'DATABASE DEBUG:',
-            parsed.hostname,
-            parsed.port || 'default',
+        const username =
+          configService.getOrThrow<string>(
+            'PGUSER',
           );
-        } catch {
-          console.log(
-            'DATABASE DEBUG: invalid DATABASE_URL',
+
+        const password =
+          configService.getOrThrow<string>(
+            'PGPASSWORD',
           );
-        }
+
+        const database =
+          configService.getOrThrow<string>(
+            'PGDATABASE',
+          );
+
+        console.log(
+          'DATABASE HOST:',
+          host,
+          port,
+        );
 
         return {
           type: 'postgres' as const,
 
-          url: databaseUrl,
+          host,
+          port,
+          username,
+          password,
+          database,
 
           autoLoadEntities: true,
 
