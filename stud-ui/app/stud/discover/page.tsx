@@ -103,6 +103,11 @@ const demoProfiles: Profile[] = [
         bio: "Code during the week. Mountains whenever possible.",
         interests: ["Tech", "Hiking", "Cinema"],
         image: "/images/profiles/theo.jpg",
+
+        wallet:
+            "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+
+        likedYou: true,
     },
 ]
 
