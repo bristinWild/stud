@@ -12,14 +12,21 @@ import {
 import { worldchainSepolia } from 'viem/chains'
 
 const RPC_URL =
-    process.env.NEXT_PUBLIC_RPC_URL ??
-    'http://127.0.0.1:8545'
+    process.env.RPC_URL ??
+    worldchainSepolia.rpcUrls.default.http[0]
 
-export const USDC_ADDRESS =
-    getAddress(
-        process.env
-            .MOCK_USDC_ADDRESS!,
-    )
+const MOCK_USDC_ADDRESS =
+    process.env.MOCK_USDC_ADDRESS
+
+function getUsdcAddress() {
+    if (!MOCK_USDC_ADDRESS) {
+        throw new Error(
+            "MOCK_USDC_ADDRESS is not configured."
+        )
+    }
+
+    return getAddress(MOCK_USDC_ADDRESS)
+}
 
 const publicClient =
     createPublicClient({
@@ -472,7 +479,7 @@ export async function placePredictionPosition(
         await publicClient
             .readContract({
                 address:
-                    USDC_ADDRESS,
+                    getUsdcAddress(),
                 abi: erc20Abi,
                 functionName:
                     'allowance',
@@ -494,7 +501,7 @@ export async function placePredictionPosition(
                     account,
                     chain: worldchainSepolia,
                     address:
-                        USDC_ADDRESS,
+                        getUsdcAddress(),
                     abi: erc20Abi,
                     functionName:
                         'approve',
