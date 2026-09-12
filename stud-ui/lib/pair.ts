@@ -18,18 +18,18 @@ import {
 
 const RPC_URL =
     process.env
-        .NEXT_PUBLIC_RPC_URL ??
+        .RPC_URL ??
     "http://127.0.0.1:8545"
 
 const BACKEND_URL =
     process.env
-        .NEXT_PUBLIC_BACKEND_URL ??
+        .BACKEND_URL ??
     "http://localhost:3001"
 
 const PAIR_REGISTRY_ADDRESS =
     getAddress(
         process.env
-            .NEXT_PUBLIC_PAIR_REGISTRY_ADDRESS!
+            .PAIR_REGISTRY_ADDRESS!
     )
 
 const publicClient =

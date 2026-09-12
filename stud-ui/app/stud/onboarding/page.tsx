@@ -44,16 +44,16 @@ type Gender = "Man" | "Woman"
 
 const BACKEND =
     process.env
-        .NEXT_PUBLIC_BACKEND_URL ??
+        .BACKEND_URL ??
     "http://localhost:3001"
 
 const WORLD_APP_ID =
     process.env
-        .NEXT_PUBLIC_WORLD_APP_ID!
+        .WORLD_APP_ID!
 
 const WORLD_RP_ID =
     process.env
-        .NEXT_PUBLIC_WORLD_RP_ID!
+        .WORLD_RP_ID!
 
 const WORLD_ENVIRONMENT =
     "production" as const

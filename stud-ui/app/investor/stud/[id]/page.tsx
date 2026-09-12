@@ -190,7 +190,7 @@ export default function StudMarketPage() {
 
     const backendUrl =
         process.env
-            .NEXT_PUBLIC_BACKEND_URL ??
+            .BACKEND_URL ??
         "http://localhost:3001"
 
     const {

@@ -12,13 +12,13 @@ import {
 import { foundry } from 'viem/chains'
 
 const RPC_URL =
-    process.env.NEXT_PUBLIC_RPC_URL ??
+    process.env.RPC_URL ??
     'http://127.0.0.1:8545'
 
 export const USDC_ADDRESS =
     getAddress(
         process.env
-            .NEXT_PUBLIC_MOCK_USDC_ADDRESS!,
+            .MOCK_USDC_ADDRESS!,
     )
 
 const publicClient =
@@ -217,36 +217,36 @@ export async function getEthereumProvider():
         ),
     ]
 
-  for (const item of orderedProviders) {
-    try {
-        const chainId =
-            await item.provider.request({
-                method: "eth_chainId",
-            })
+    for (const item of orderedProviders) {
+        try {
+            const chainId =
+                await item.provider.request({
+                    method: "eth_chainId",
+                })
 
-        console.log(
-            "Wallet probe:",
-            item.info.name,
-            item.info.rdns,
-            chainId
-        )
+            console.log(
+                "Wallet probe:",
+                item.info.name,
+                item.info.rdns,
+                chainId
+            )
 
-        console.log(
-            "Using wallet:",
-            item.info.name,
-            item.info.rdns
-        )
+            console.log(
+                "Using wallet:",
+                item.info.name,
+                item.info.rdns
+            )
 
-        return item.provider
-    } catch (error) {
-        console.warn(
-            "Skipping broken provider:",
-            item.info.name,
-            item.info.rdns,
-            error
-        )
+            return item.provider
+        } catch (error) {
+            console.warn(
+                "Skipping broken provider:",
+                item.info.name,
+                item.info.rdns,
+                error
+            )
+        }
     }
-}
     throw new Error(
         "No EVM wallet connected to Anvil chain 31337 was found."
     )

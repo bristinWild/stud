@@ -18,14 +18,14 @@ import {
 
 
 const RPC_URL =
-    process.env.NEXT_PUBLIC_RPC_URL ??
+    process.env.RPC_URL ??
     "http://127.0.0.1:8545"
 
 
 const STUD_REGISTRY =
     getAddress(
         process.env
-            .NEXT_PUBLIC_STUD_REGISTRY_ADDRESS!
+            .STUD_REGISTRY_ADDRESS!
     )
 
 

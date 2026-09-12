@@ -16,13 +16,13 @@ import {
 } from "@/lib/prediction-market"
 
 const RPC_URL =
-    process.env.NEXT_PUBLIC_RPC_URL ??
+    process.env.RPC_URL ??
     "http://127.0.0.1:8545"
 
 const MILESTONE_MANAGER_ADDRESS =
     getAddress(
         process.env
-            .NEXT_PUBLIC_MILESTONE_MANAGER_ADDRESS!
+            .MILESTONE_MANAGER_ADDRESS!
     )
 
 const publicClient =
