@@ -140,13 +140,13 @@ type OnchainPair = {
 const studMetadata:
     StudMeta[] = [
         {
-            id: "alice",
+            id: "alan",
             onchainStudId: 1,
 
-            name: "Alice",
-            age: 24,
-            location: "Bengaluru",
-            occupation: "Designer",
+            name: "Alan",
+            age: 27,
+            location: "Onchain",
+            occupation: "Verified Stud",
 
             image:
                 "/images/alice-profile.jpg",
@@ -178,6 +178,19 @@ const studMetadata:
             image:
                 "/images/profiles/noah.jpg",
         },
+
+        {
+            id: "theo",
+            onchainStudId: 5,
+
+            name: "Theo",
+            age: 26,
+            location: "Onchain",
+            occupation: "Verified Stud",
+
+            image:
+                "/images/profiles/theo.jpg",
+        },
     ]
 
 
@@ -192,6 +205,17 @@ const pairMetadata:
 
             token:
                 "$ALICELEO",
+        },
+
+        {
+            id: "alan-theo",
+            onchainPairId: 3,
+
+            names:
+                "Alan × Theo",
+
+            token:
+                "$ALANTHEO",
         },
 
         {

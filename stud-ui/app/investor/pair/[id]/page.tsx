@@ -111,6 +111,23 @@ const pairMeta = {
                 "/images/profiles/noah.jpg",
         },
     },
+
+    "3": {
+        names: "Alan × Theo",
+        token: "$ALANTHEO",
+
+        userA: {
+            name: "Alan",
+            image:
+                "/images/alice-profile.jpg",
+        },
+
+        userB: {
+            name: "Theo",
+            image:
+                "/images/profiles/pfp-1.jpg",
+        },
+    },
 }
 
 

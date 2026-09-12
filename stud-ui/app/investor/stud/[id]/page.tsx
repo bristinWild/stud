@@ -126,6 +126,19 @@ const studData = {
         joined: "September 2026",
         matches: 2,
     },
+
+    alan: {
+        id: "alan",
+        onchainStudId: 1,
+        name: "Alan",
+        age: 27,
+        occupation: "Verified Stud",
+        location: "Onchain",
+        image: "/images/alice-profile.jpg",
+        verified: true,
+        joined: "September 2026",
+        matches: 1,
+    },
 }
 
 export default function StudMarketPage() {
