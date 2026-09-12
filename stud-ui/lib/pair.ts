@@ -9,7 +9,7 @@ import {
 } from "viem"
 
 import {
-    foundry,
+    worldchainSepolia,
 } from "viem/chains"
 
 import {
@@ -34,7 +34,7 @@ const PAIR_REGISTRY_ADDRESS =
 
 const publicClient =
     createPublicClient({
-        chain: foundry,
+        chain: worldchainSepolia,
         transport: http(
             RPC_URL
         ),
@@ -114,16 +114,16 @@ export async function createPairFromMatch(
 
     if (
         chainId !==
-        "0x7a69"
+        "0x12c1"
     ) {
         throw new Error(
-            "Switch MetaMask to Anvil Local."
+            "Switch MetaMask to World Chain Sepolia."
         )
     }
 
     const walletClient =
         createWalletClient({
-            chain: foundry,
+            chain: worldchainSepolia,
             transport:
                 custom(provider),
         })
@@ -240,7 +240,7 @@ export async function createPairFromMatch(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
 
                 address:
                     PAIR_REGISTRY_ADDRESS,

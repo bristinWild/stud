@@ -9,13 +9,13 @@ import {
 } from "@worldcoin/idkit"
 
 const BACKEND =
-    process.env.STUD_BACKEND_URL!
+    process.env.NEXT_PUBLIC_STUD_BACKEND_URL!
 
 const APP_ID =
-    process.env.WORLD_APP_ID!
+    process.env.NEXT_PUBLIC_WORLD_APP_ID!
 
 const RP_ID =
-    process.env.WORLD_RP_ID!
+    process.env.NEXT_PUBLIC_WORLD_RP_ID!
 
 const ALICE_WALLET =
     "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"

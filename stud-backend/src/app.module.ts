@@ -13,7 +13,6 @@ import {
   ProfileModule,
 } from './profile/profile.module.js';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,23 +25,41 @@ import {
 
       useFactory: (
         configService: ConfigService,
-      ) => ({
-        type: 'postgres' as const,
+      ) => {
+        const databaseUrl =
+          configService.getOrThrow<string>(
+            'DATABASE_URL',
+          );
 
-        url: configService.getOrThrow<string>(
-          'DATABASE_URL',
-        ),
+        try {
+          const parsed =
+            new URL(databaseUrl);
 
-        autoLoadEntities: true,
+          console.log(
+            'DATABASE DEBUG:',
+            parsed.hostname,
+            parsed.port || 'default',
+          );
+        } catch {
+          console.log(
+            'DATABASE DEBUG: invalid DATABASE_URL',
+          );
+        }
 
-        // Fine for local hackathon development.
-        // We'll replace with migrations before production.
-        synchronize: true,
-      }),
+        return {
+          type: 'postgres' as const,
+
+          url: databaseUrl,
+
+          autoLoadEntities: true,
+
+          // Fine for hackathon deployment.
+          synchronize: true,
+        };
+      },
     }),
 
     WorldIdModule,
-
     PairModule,
     OnchainModule,
     ProfileModule,

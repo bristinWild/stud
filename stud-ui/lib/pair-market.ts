@@ -10,7 +10,7 @@ import {
 } from "viem"
 
 import {
-    foundry,
+    worldchainSepolia,
 } from "viem/chains"
 
 import {
@@ -30,7 +30,7 @@ const PAIR_MARKET_FACTORY_ADDRESS =
 
 const publicClient =
     createPublicClient({
-        chain: foundry,
+        chain: worldchainSepolia,
         transport: http(
             RPC_URL
         ),
@@ -217,16 +217,16 @@ async function getWallet() {
 
     if (
         chainId !==
-        "0x7a69"
+        "0x12c1"
     ) {
         throw new Error(
-            "Switch MetaMask to Anvil Local."
+            "Switch MetaMask to World Chain Sepolia."
         )
     }
 
     const walletClient =
         createWalletClient({
-            chain: foundry,
+            chain: worldchainSepolia,
             transport:
                 custom(provider),
         })
@@ -434,7 +434,7 @@ export async function buyPairTokens(
                 .writeContract({
                     account,
                     chain:
-                        foundry,
+                        worldchainSepolia,
                     address:
                         quoteToken,
                     abi:
@@ -467,7 +467,7 @@ export async function buyPairTokens(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     market,
                 abi:
@@ -566,7 +566,7 @@ export async function sellPairTokens(
                 .writeContract({
                     account,
                     chain:
-                        foundry,
+                        worldchainSepolia,
                     address:
                         pairToken,
                     abi:
@@ -598,7 +598,7 @@ export async function sellPairTokens(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     market,
                 abi:
@@ -674,7 +674,7 @@ export async function signPairMarketActivation(
                     version:
                         "1",
                     chainId:
-                        31337,
+                        4801,
                     verifyingContract:
                         PAIR_MARKET_FACTORY_ADDRESS,
                 },
@@ -744,7 +744,7 @@ export async function activatePairMarket(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     PAIR_MARKET_FACTORY_ADDRESS,
                 abi:

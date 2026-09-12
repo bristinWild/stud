@@ -187,14 +187,14 @@ export function WalletProvider({
 
                             if (
                                 chainId !==
-                                "0x7a69"
+                                "0x12c1"
                             ) {
                                 setAddress(
                                     null
                                 )
 
                                 setWalletError(
-                                    "Switch wallet to Anvil Local."
+                                    "Switch wallet to World Chain Sepolia."
                                 )
 
                                 return

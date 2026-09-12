@@ -8,7 +8,7 @@ import {
 } from "viem"
 
 import {
-    foundry,
+    worldchainSepolia,
 } from "viem/chains"
 
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/lib/prediction-market"
 
 const RPC_URL =
-    process.env.RPC_URL ??
+    process.env.NEXT_PUBLIC_RPC_URL ??
     "http://127.0.0.1:8545"
 
 const MILESTONE_MANAGER_ADDRESS =
@@ -27,7 +27,7 @@ const MILESTONE_MANAGER_ADDRESS =
 
 const publicClient =
     createPublicClient({
-        chain: foundry,
+        chain: worldchainSepolia,
         transport: http(RPC_URL),
     })
 
@@ -196,16 +196,16 @@ async function getWallet() {
 
     if (
         chainId !==
-        "0x7a69"
+        "0x12c1"
     ) {
         throw new Error(
-            "Switch MetaMask to Anvil Local."
+            "Switch MetaMask to World Chain Sepolia."
         )
     }
 
     const walletClient =
         createWalletClient({
-            chain: foundry,
+            chain: worldchainSepolia,
             transport:
                 custom(provider),
         })
@@ -306,7 +306,7 @@ export async function proposeMilestone(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     MILESTONE_MANAGER_ADDRESS,
                 abi:
@@ -354,7 +354,7 @@ export async function acceptMilestone(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     MILESTONE_MANAGER_ADDRESS,
                 abi:
@@ -401,7 +401,7 @@ export async function attestMilestoneCompletion(
             .writeContract({
                 account,
                 chain:
-                    foundry,
+                    worldchainSepolia,
                 address:
                     MILESTONE_MANAGER_ADDRESS,
                 abi:

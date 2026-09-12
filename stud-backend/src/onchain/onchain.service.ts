@@ -12,7 +12,7 @@ import {
 import {
     privateKeyToAccount,
 } from 'viem/accounts';
-import { foundry } from 'viem/chains';
+import { worldchainSepolia } from 'viem/chains';
 
 
 
@@ -421,7 +421,7 @@ export class OnchainService {
 
         this.client =
             createPublicClient({
-                chain: foundry,
+                chain: worldchainSepolia,
                 transport: http(rpcUrl),
             });
 
@@ -439,7 +439,7 @@ export class OnchainService {
             createWalletClient({
                 account:
                     this.marketCreatorAccount,
-                chain: foundry,
+                chain: worldchainSepolia,
                 transport: http(rpcUrl),
             });
     }
@@ -794,46 +794,46 @@ export class OnchainService {
     }
 
     async resolvePredictionMarket(
-  marketId: bigint,
-  outcome: 1 | 2,
-) {
-  const marketAddress =
-    await this.getPredictionMarket(
-      marketId,
-    );
+        marketId: bigint,
+        outcome: 1 | 2,
+    ) {
+        const marketAddress =
+            await this.getPredictionMarket(
+                marketId,
+            );
 
-  const hash =
-    await this.walletClient.writeContract({
-      address: marketAddress,
+        const hash =
+            await this.walletClient.writeContract({
+                address: marketAddress,
 
-      abi:
-        predictionMarketWriteAbi,
+                abi:
+                    predictionMarketWriteAbi,
 
-      functionName:
-        'resolve',
+                functionName:
+                    'resolve',
 
-      args: [
-        outcome,
-      ],
+                args: [
+                    outcome,
+                ],
 
-      account:
-        this.marketCreatorAccount,
-    });
+                account:
+                    this.marketCreatorAccount,
+            });
 
-  const receipt =
-    await this.client
-      .waitForTransactionReceipt({
-        hash,
-      });
+        const receipt =
+            await this.client
+                .waitForTransactionReceipt({
+                    hash,
+                });
 
-  return {
-    hash,
-    blockNumber:
-      receipt.blockNumber,
-    status:
-      receipt.status,
-    marketAddress,
-    outcome,
-  };
-}
+        return {
+            hash,
+            blockNumber:
+                receipt.blockNumber,
+            status:
+                receipt.status,
+            marketAddress,
+            outcome,
+        };
+    }
 }

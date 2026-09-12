@@ -9,10 +9,10 @@ import {
     type EIP1193Provider,
 } from 'viem'
 
-import { foundry } from 'viem/chains'
+import { worldchainSepolia } from 'viem/chains'
 
 const RPC_URL =
-    process.env.RPC_URL ??
+    process.env.NEXT_PUBLIC_RPC_URL ??
     'http://127.0.0.1:8545'
 
 export const USDC_ADDRESS =
@@ -23,7 +23,7 @@ export const USDC_ADDRESS =
 
 const publicClient =
     createPublicClient({
-        chain: foundry,
+        chain: worldchainSepolia,
         transport: http(RPC_URL),
     })
 
@@ -248,7 +248,7 @@ export async function getEthereumProvider():
         }
     }
     throw new Error(
-        "No EVM wallet connected to Anvil chain 31337 was found."
+        "No EVM wallet connected to World Chain Sepolia was found."
     )
 }
 
@@ -347,7 +347,7 @@ async function ensureFoundryNetwork(
     provider: EIP1193Provider,
 ) {
     const requiredChainId =
-        '0x7a69'
+        '0x12c1'
 
     const currentChainId =
         await provider.request({
@@ -392,7 +392,7 @@ async function ensureFoundryNetwork(
                     chainId:
                         requiredChainId,
                     chainName:
-                        'Anvil Local',
+                        'World Chain Sepolia',
                     rpcUrls: [
                         RPC_URL,
                     ],
@@ -413,7 +413,7 @@ async function getWallet() {
 
     const walletClient =
         createWalletClient({
-            chain: foundry,
+            chain: worldchainSepolia,
             transport: custom(provider),
         })
 
@@ -492,7 +492,7 @@ export async function placePredictionPosition(
             await walletClient
                 .writeContract({
                     account,
-                    chain: foundry,
+                    chain: worldchainSepolia,
                     address:
                         USDC_ADDRESS,
                     abi: erc20Abi,
@@ -515,7 +515,7 @@ export async function placePredictionPosition(
         await walletClient
             .writeContract({
                 account,
-                chain: foundry,
+                chain: worldchainSepolia,
                 address: market,
                 abi:
                     predictionMarketAbi,
@@ -554,7 +554,7 @@ export async function claimPredictionWinnings(
         await walletClient
             .writeContract({
                 account,
-                chain: foundry,
+                chain: worldchainSepolia,
                 address:
                     getAddress(
                         marketAddress,
@@ -587,7 +587,7 @@ export async function connectWallet() {
 
     const walletClient =
         createWalletClient({
-            chain: foundry,
+            chain: worldchainSepolia,
             transport: custom(
                 provider
             ),
@@ -620,7 +620,7 @@ export async function getConnectedWallet() {
 
     if (
         chainId !==
-        "0x7a69"
+        "0x12c1"
     ) {
         return null
     }

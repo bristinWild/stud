@@ -9,7 +9,7 @@ import {
 } from "viem"
 
 import {
-    foundry,
+    worldchainSepolia,
 } from "viem/chains"
 
 import {
@@ -18,7 +18,7 @@ import {
 
 
 const RPC_URL =
-    process.env.RPC_URL ??
+    process.env.NEXT_PUBLIC_RPC_URL ??
     "http://127.0.0.1:8545"
 
 
@@ -32,7 +32,7 @@ const STUD_REGISTRY =
 const publicClient =
     createPublicClient({
         chain:
-            foundry,
+            worldchainSepolia,
 
         transport:
             http(
@@ -232,7 +232,7 @@ export async function registerStudOnchain(
     const walletClient =
         createWalletClient({
             chain:
-                foundry,
+                worldchainSepolia,
 
             transport:
                 custom(
@@ -279,7 +279,7 @@ export async function registerStudOnchain(
                 account,
 
                 chain:
-                    foundry,
+                    worldchainSepolia,
 
                 address:
                     STUD_REGISTRY,
