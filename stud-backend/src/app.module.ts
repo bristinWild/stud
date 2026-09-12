@@ -9,6 +9,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WorldIdModule } from './world-id/world-id.module.js';
 import { PairModule } from './pair/pair.module.js';
 import { OnchainModule } from './onchain/onchain.module.js';
+import {
+  ProfileModule,
+} from './profile/profile.module.js';
 
 
 @Module({
@@ -42,6 +45,7 @@ import { OnchainModule } from './onchain/onchain.module.js';
 
     PairModule,
     OnchainModule,
+    ProfileModule,
   ],
 })
 export class AppModule { }

@@ -1,6 +1,12 @@
 "use client"
 
-import { motion } from "framer-motion"
+import {
+    motion,
+} from "framer-motion"
+
+import {
+    useState,
+} from "react"
 import {
     ArrowUpRight,
     HeartHandshake,
@@ -10,9 +16,157 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import {
+    WalletButton,
+} from "@/components/wallet-button"
+
+import {
+    useWallet,
+} from "@/components/wallet-provider"
+
+import {
+    getStudRegistration,
+} from "@/lib/stud-registration"
+
+
+const BACKEND =
+    process.env
+        .NEXT_PUBLIC_BACKEND_URL ??
+    "http://localhost:3001"
 
 export default function LaunchPage() {
     const router = useRouter()
+
+    const {
+        address,
+        connect,
+    } = useWallet()
+
+    const [
+        openingDiscover,
+        setOpeningDiscover,
+    ] = useState(false)
+
+    const [
+        discoverError,
+        setDiscoverError,
+    ] = useState("")
+
+    const openDiscover =
+        async () => {
+            if (
+                openingDiscover
+            ) {
+                return
+            }
+
+            try {
+                setOpeningDiscover(
+                    true
+                )
+
+                setDiscoverError(
+                    ""
+                )
+
+                let wallet =
+                    address
+
+                /*
+                 * No wallet yet:
+                 * ask the user to connect.
+                 */
+                if (
+                    !wallet
+                ) {
+                    wallet =
+                        await connect()
+                }
+
+                if (
+                    !wallet
+                ) {
+                    setDiscoverError(
+                        "Connect your wallet to discover Studs."
+                    )
+
+                    return
+                }
+
+                /*
+                 * Check that this wallet
+                 * is actually registered
+                 * in StudRegistry.
+                 */
+                const registration =
+                    await getStudRegistration(
+                        wallet
+                    )
+
+                if (
+                    !registration.verified
+                ) {
+                    router.push(
+                        "/stud/onboarding"
+                    )
+
+                    return
+                }
+
+                const profileResponse =
+                    await fetch(
+                        `${BACKEND}/profiles/wallet/${wallet}`,
+                        {
+                            cache: "no-store",
+                        }
+                    )
+
+                if (!profileResponse.ok) {
+                    throw new Error(
+                        "Could not check your Stud profile."
+                    )
+                }
+
+                const rawProfile =
+                    await profileResponse.text()
+
+                const profile =
+                    rawProfile
+                        ? JSON.parse(rawProfile)
+                        : null
+
+                if (!profile) {
+                    router.push(
+                        "/stud/onboarding"
+                    )
+
+                    return
+                }
+                /*
+                 * A verified Stud may still
+                 * not have completed their
+                 * offchain profile.
+                 */
+
+                /*
+                 * Fully registered Stud.
+                 */
+                window.location.href =
+                    "/stud/discover"
+            } catch (
+            error
+            ) {
+                setDiscoverError(
+                    error instanceof Error
+                        ? error.message
+                        : "Could not open Discover."
+                )
+            } finally {
+                setOpeningDiscover(
+                    false
+                )
+            }
+        }
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-background px-6 py-12">
@@ -30,9 +184,13 @@ export default function LaunchPage() {
                     STUD
                 </button>
 
-                <div className="flex items-center gap-2 text-xs text-stud-ink/45">
-                    <BadgeCheck className="h-4 w-4" />
-                    Powered by World ID
+                <div className="flex items-center gap-4">
+                    <div className="hidden items-center gap-2 text-xs text-stud-ink/45 sm:flex">
+                        <BadgeCheck className="h-4 w-4" />
+                        Powered by World ID
+                    </div>
+
+                    <WalletButton />
                 </div>
             </div>
 
@@ -158,6 +316,32 @@ export default function LaunchPage() {
                     </motion.button>
                 </div>
 
+                <div className="mt-8 flex flex-col items-center">
+                    <button
+                        type="button"
+                        onClick={
+                            openDiscover
+                        }
+                        disabled={
+                            openingDiscover
+                        }
+                        className="group flex items-center gap-3 rounded-full border border-stud-ink/10 bg-white/60 px-6 py-3 text-sm font-medium text-stud-ink transition-all hover:bg-stud-ink hover:text-stud-bg disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {openingDiscover
+                            ? "Checking Stud..."
+                            : "Already a Stud? Discover"}
+
+                        {!openingDiscover && (
+                            <ArrowUpRight className="h-4 w-4" />
+                        )}
+                    </button>
+
+                    {discoverError && (
+                        <p className="mt-3 text-sm text-red-500">
+                            {discoverError}
+                        </p>
+                    )}
+                </div>
                 <p className="mt-8 text-center text-xs text-stud-ink/35">
                     You can switch between social and market experiences later.
                 </p>

@@ -46,10 +46,26 @@ export class WorldIdVerificationService {
             });
 
         if (existingNullifier) {
+            /*
+             * Same World proof + same wallet:
+             * allow retry.
+             */
+            if (
+                existingNullifier.wallet ===
+                normalizedWallet
+            ) {
+                return existingNullifier;
+            }
+
+            /*
+             * Same World proof cannot be
+             * reused for another wallet.
+             */
             throw new ConflictException(
-                'This World ID proof has already been used',
+                'This World ID proof is already associated with another wallet',
             );
         }
+
         /*
          * Has this wallet already registered
          * using another World identity?
@@ -63,6 +79,21 @@ export class WorldIdVerificationService {
             });
 
         if (existingWallet) {
+            /*
+             * Same wallet + same proof:
+             * allow retry.
+             */
+            if (
+                existingWallet.nullifier ===
+                nullifier
+            ) {
+                return existingWallet;
+            }
+
+            /*
+             * A wallet cannot bind itself
+             * to a second World identity.
+             */
             throw new ConflictException(
                 'This wallet is already associated with another World ID',
             );
@@ -92,6 +123,27 @@ export class WorldIdVerificationService {
                 'code' in error &&
                 error.code === '23505'
             ) {
+                /*
+                 * A second request may have
+                 * inserted the exact same
+                 * verification just before us.
+                 *
+                 * Treat that as a successful retry.
+                 */
+                const existing =
+                    await this.repository.findOne({
+                        where: {
+                            action,
+                            nullifier,
+                            wallet:
+                                normalizedWallet,
+                        },
+                    });
+
+                if (existing) {
+                    return existing;
+                }
+
                 throw new ConflictException(
                     'World ID verification already exists',
                 );

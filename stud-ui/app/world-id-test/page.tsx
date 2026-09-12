@@ -133,7 +133,7 @@ export default function WorldIdTestPage() {
                         action="register-stud"
                         rp_context={rpContext}
                         allow_legacy_proofs={true}
-                        environment="staging"
+                        environment="production"
                         preset={orbLegacy({
                             signal:
                                 ALICE_WALLET.toLowerCase(),

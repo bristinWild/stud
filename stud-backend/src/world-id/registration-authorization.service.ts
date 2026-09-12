@@ -65,7 +65,7 @@ export class RegistrationAuthorizationService {
         // Authorization valid for 10 minutes.
         const rpcUrl =
             this.configService.get<string>(
-                'WORLD_CHAIN_RPC_URL',
+                'RPC_URL',
             ) ??
             'http://127.0.0.1:8545';
 

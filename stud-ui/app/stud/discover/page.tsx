@@ -1,6 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react"
 import { useRouter } from "next/navigation"
 import {
     AnimatePresence,
@@ -36,7 +40,7 @@ import {
 import Link from "next/link"
 
 type Profile = {
-    id: number
+    id: number | string
     name: string
     age: number
     occupation: string
@@ -46,9 +50,10 @@ type Profile = {
     image: string
     wallet?: Address
     likedYou?: boolean
+    live?: boolean
 }
 
-const profiles: Profile[] = [
+const demoProfiles: Profile[] = [
     {
         id: 1,
         name: "Noah",
@@ -101,12 +106,211 @@ const profiles: Profile[] = [
     },
 ]
 
+const BACKEND =
+    process.env
+        .NEXT_PUBLIC_BACKEND_URL ??
+    "http://localhost:3001"
+
+type BackendProfile = {
+    id: string
+    studId: number
+    wallet: string
+    name: string
+    age: number
+    gender: string
+    preference: string
+    bio: string
+    interests: string[]
+    profileImage: string
+}
+
 export default function DiscoverPage() {
     const router = useRouter()
 
     const {
         address: walletAddress,
     } = useWallet()
+
+    const [
+        liveProfiles,
+        setLiveProfiles,
+    ] =
+        useState<Profile[]>([])
+
+    const [
+        loadingProfiles,
+        setLoadingProfiles,
+    ] =
+        useState(false)
+
+    useEffect(() => {
+        if (!walletAddress) {
+            setLiveProfiles([])
+            return
+        }
+
+        const controller =
+            new AbortController()
+
+        async function loadProfiles() {
+            try {
+                setLoadingProfiles(
+                    true
+                )
+
+                const response =
+                    await fetch(
+                        `${BACKEND}/profiles/discover?wallet=${walletAddress}`,
+                        {
+                            cache:
+                                "no-store",
+
+                            signal:
+                                controller.signal,
+                        }
+                    )
+
+                const data =
+                    await response.json()
+
+                if (
+                    !response.ok
+                ) {
+                    throw new Error(
+                        data.message ??
+                        "Could not load profiles."
+                    )
+                }
+
+                const mappedProfiles:
+                    Profile[] =
+                    (
+                        data as BackendProfile[]
+                    ).map(
+                        (item) => ({
+                            id:
+                                `live-${item.studId}`,
+
+                            name:
+                                item.name,
+
+                            age:
+                                item.age,
+
+                            occupation:
+                                "Verified Stud",
+
+                            location:
+                                "Onchain",
+
+                            bio:
+                                item.bio,
+
+                            interests:
+                                item.interests,
+
+                            image:
+                                item.profileImage,
+
+                            wallet:
+                                item.wallet as Address,
+
+                            /*
+                             * Real users have not
+                             * automatically liked you.
+                             */
+                            likedYou:
+                                false,
+
+                            live:
+                                true,
+                        })
+                    )
+
+                setLiveProfiles(
+                    mappedProfiles
+                )
+            } catch (
+            error
+            ) {
+                if (
+                    error instanceof DOMException &&
+                    error.name ===
+                    "AbortError"
+                ) {
+                    return
+                }
+
+                console.error(
+                    "Could not load live profiles:",
+                    error
+                )
+            } finally {
+                setLoadingProfiles(
+                    false
+                )
+            }
+        }
+
+        void loadProfiles()
+
+        return () => {
+            controller.abort()
+        }
+    }, [
+        walletAddress,
+    ])
+
+    const profiles =
+        useMemo(
+            () => {
+                const demoWallets =
+                    new Set(
+                        demoProfiles
+                            .map(
+                                (profile) =>
+                                    profile.wallet
+                                        ?.toLowerCase()
+                            )
+                            .filter(
+                                (
+                                    wallet
+                                ):
+                                    wallet is string =>
+                                    Boolean(
+                                        wallet
+                                    )
+                            )
+                    )
+
+                /*
+                 * Keep demo cards,
+                 * then append genuinely
+                 * new database profiles.
+                 *
+                 * If Leo/Noah later also
+                 * exist in Postgres, don't
+                 * show them twice.
+                 */
+                const uniqueLive =
+                    liveProfiles.filter(
+                        (profile) =>
+                            !profile.wallet ||
+                            !demoWallets.has(
+                                profile.wallet
+                                    .toLowerCase()
+                            )
+                    )
+
+                return [
+                    ...demoProfiles,
+                    ...uniqueLive,
+                ]
+            },
+            [
+                liveProfiles,
+            ]
+        )
 
     const [
         creatingPair,
@@ -131,6 +335,13 @@ export default function DiscoverPage() {
     const [direction, setDirection] = useState<1 | -1>(1)
     const [match, setMatch] = useState<Profile | null>(null)
 
+
+    useEffect(() => {
+        setCurrentIndex(0)
+        setMatch(null)
+        setPairId(null)
+        setPairMessage("")
+    }, [walletAddress])
 
 
     const profile = profiles[currentIndex]
@@ -518,6 +729,14 @@ function SwipeCard({
 
                     <BadgeCheck className="h-5 w-5" />
                 </div>
+
+                {profile.live && (
+                    <div className="mb-3">
+                        <span className="rounded-full bg-[#E2A9F1] px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em] text-[#3D3B3A]">
+                            Live profile
+                        </span>
+                    </div>
+                )}
 
                 <p className="mb-3 text-sm text-white/70">
                     {profile.occupation} · {profile.location}
