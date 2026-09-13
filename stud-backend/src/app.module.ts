@@ -26,50 +26,23 @@ import {
       useFactory: (
         configService: ConfigService,
       ) => {
-        const host =
+        const databaseUrl =
           configService.getOrThrow<string>(
-            'PGHOST',
+            'DATABASE_URL',
           );
 
-        const port = Number(
-          configService.getOrThrow<string>(
-            'PGPORT',
-          ),
-        );
-
-        const username =
-          configService.getOrThrow<string>(
-            'PGUSER',
-          );
-
-        const password =
-          configService.getOrThrow<string>(
-            'PGPASSWORD',
-          );
-
-        const database =
-          configService.getOrThrow<string>(
-            'PGDATABASE',
-          );
+        const parsed = new URL(databaseUrl);
 
         console.log(
           'DATABASE HOST:',
-          host,
-          port,
+          parsed.hostname,
+          parsed.port,
         );
 
         return {
           type: 'postgres' as const,
-
-          host,
-          port,
-          username,
-          password,
-          database,
-
+          url: databaseUrl,
           autoLoadEntities: true,
-
-          // Fine for hackathon deployment.
           synchronize: true,
         };
       },
