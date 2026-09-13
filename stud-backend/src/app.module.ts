@@ -26,28 +26,46 @@ import {
       useFactory: (
         configService: ConfigService,
       ) => {
-        const databaseUrl =
-          configService.getOrThrow<string>(
-            'DATABASE_URL',
-          );
+        const host =
+          configService.getOrThrow<string>('DB_HOST');
 
-        const parsed = new URL(databaseUrl);
+        const port = Number(
+          configService.getOrThrow<string>('DB_PORT'),
+        );
+
+        const username =
+          configService.getOrThrow<string>('DB_USER');
+
+        const password =
+          configService.getOrThrow<string>('DB_PASSWORD');
+
+        const database =
+          configService.getOrThrow<string>('DB_NAME');
 
         console.log(
-          'DATABASE HOST:',
-          parsed.hostname,
-          parsed.port,
+          'DATABASE CONNECTION:',
+          host,
+          port,
+          database,
         );
 
         return {
           type: 'postgres' as const,
-          url: databaseUrl,
+          host,
+          port,
+          username,
+          password,
+          database,
+
+          ssl: {
+            rejectUnauthorized: false,
+          },
+
           autoLoadEntities: true,
           synchronize: true,
         };
       },
     }),
-
     WorldIdModule,
     PairModule,
     OnchainModule,
