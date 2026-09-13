@@ -5,6 +5,7 @@ import {
 import {
   NestExpressApplication,
 } from '@nestjs/platform-express';
+
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -27,7 +28,9 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'https://stud-dwwj.vercel.app',
     ],
+
     methods: [
       'GET',
       'POST',
@@ -36,6 +39,7 @@ async function bootstrap() {
       'DELETE',
       'OPTIONS',
     ],
+
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -45,10 +49,13 @@ async function bootstrap() {
   const port =
     process.env.PORT || 3001;
 
-  await app.listen(port);
+  await app.listen(
+    port,
+    '0.0.0.0',
+  );
 
   console.log(
-    `Stud backend running on http://localhost:${port}`,
+    `Stud backend running on port ${port}`,
   );
 }
 
